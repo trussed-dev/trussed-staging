@@ -1,3 +1,6 @@
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
 mod store;
 use store::OpenSeekFrom;
 
@@ -69,7 +72,7 @@ impl Extension for ChunkedExtension {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[allow(missing_docs)]
+#[allow(missing_docs, clippy::large_enum_variant)]
 pub enum ChunkedRequest {
     StartChunkedWrite(request::StartChunkedWrite),
     #[cfg(feature = "encrypted-chunked")]

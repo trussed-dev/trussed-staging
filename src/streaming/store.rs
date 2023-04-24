@@ -1,3 +1,6 @@
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
 use littlefs2::driver::Storage as LfsStorage;
 use littlefs2::fs::{File, Filesystem};
 use littlefs2::io::{SeekFrom, Write};
@@ -219,7 +222,7 @@ fn actual_path(client_id: &Path, client_path: &Path) -> Result<PathBuf, Error> {
     }
 
     let mut path = PathBuf::new();
-    path.push(&client_id);
+    path.push(client_id);
     path.push(&PathBuf::from("dat"));
     path.push(client_path);
     Ok(path)
