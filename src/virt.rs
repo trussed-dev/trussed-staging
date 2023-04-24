@@ -1,9 +1,12 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-//! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`SoftwareRsa`](crate::SoftwareRsa) backend.
+//! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`StagingBackend`](crate::StagingBackend) backend.
 
-use crate::{wrap_key_to_file::WrapKeyToFileExtension, StagingBackend, StagingContext};
+#[cfg(feature = "wrap-key-to-file")]
+use crate::wrap_key_to_file::WrapKeyToFileExtension;
+
+use crate::{StagingBackend, StagingContext};
 
 #[derive(Default, Debug)]
 pub struct Dispatcher {
@@ -17,9 +20,11 @@ pub enum BackendIds {
 
 #[derive(Debug)]
 pub enum ExtensionIds {
+    #[cfg(feature = "wrap-key-to-file")]
     WrapKeyToFile,
 }
 
+#[cfg(feature = "wrap-key-to-file")]
 impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
     type Id = ExtensionIds;
     const ID: ExtensionIds = ExtensionIds::WrapKeyToFile;
@@ -28,6 +33,7 @@ impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
+            #[cfg(feature = "wrap-key-to-file")]
             ExtensionIds::WrapKeyToFile => 0,
         }
     }
@@ -37,6 +43,7 @@ impl TryFrom<u8> for ExtensionIds {
     type Error = Error;
     fn try_from(value: u8) -> Result<Self, Error> {
         match value {
+            #[cfg(feature = "wrap-key-to-file")]
             0 => Ok(Self::WrapKeyToFile),
             _ => Err(Error::FunctionNotSupported),
         }
@@ -66,7 +73,14 @@ impl ExtensionDispatch for Dispatcher {
         request: &trussed::api::request::SerdeExtension,
         resources: &mut trussed::service::ServiceResources<P>,
     ) -> Result<trussed::api::reply::SerdeExtension, Error> {
-        match extension {
+        let _ = &extension;
+        let _ = &ctx;
+        let _ = &request;
+        let _ = &resources;
+        // Dereference to avoid compile issue when all features are disabled requiring a default branch
+        // See https://github.com/rust-lang/rust/issues/78123#
+        match *extension {
+            #[cfg(feature = "wrap-key-to-file")]
             ExtensionIds::WrapKeyToFile => self.backend.extension_request_serialized(
                 &mut ctx.core,
                 &mut ctx.backends,
@@ -79,8 +93,8 @@ impl ExtensionDispatch for Dispatcher {
 
 use std::path::PathBuf;
 use trussed::{
-    backend::{Backend, BackendId, Dispatch},
-    serde_extensions::{ExtensionDispatch, ExtensionId, ExtensionImpl},
+    backend::{Backend, BackendId},
+    serde_extensions::*,
     virt::{self, Filesystem, Ram, StoreProvider},
     Error, Platform,
 };

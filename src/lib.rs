@@ -19,7 +19,7 @@ use trussed::backend::Backend;
 #[cfg(feature = "virt")]
 pub mod virt;
 
-#[cfg(feature = "chacha20poly1305")]
+#[cfg(feature = "wrap-key-to-file")]
 pub mod wrap_key_to_file;
 
 #[derive(Clone, Debug, Default)]

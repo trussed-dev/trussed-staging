@@ -21,7 +21,8 @@ delog = "0.1.6"
 trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }
 
 [features]
-default = ["chacha20poly1305", "virt"]
+default = []
+
 wrap-key-to-file = ["chacha20poly1305"]
 
 virt = ["std", "trussed/virt"]

@@ -1,4 +1,7 @@
-#![cfg(feature = "virt")]
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
+#![cfg(all(feature = "virt", feature = "wrap-key-to-file"))]
 
 use trussed::client::CryptoClient;
 use trussed::syscall;
@@ -8,6 +11,7 @@ use trussed::types::{
 };
 
 use trussed_staging::virt::with_ram_client;
+
 use trussed_staging::wrap_key_to_file::WrapKeyToFileClient;
 
 fn assert_key_eq(key1: KeyId, key2: KeyId, client: &mut impl trussed::Client) {

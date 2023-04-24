@@ -1,6 +1,9 @@
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
 use serde::{Deserialize, Serialize};
 use trussed::{
-    client::{ClientError, ClientResult},
+    client::ClientError,
     config::MAX_SERIALIZED_KEY_LENGTH,
     key::{self, Kind, Secrecy},
     serde_extensions::{Extension, ExtensionClient, ExtensionImpl, ExtensionResult},
@@ -263,7 +266,7 @@ type WrapKeyToFileResult<'a, R, C> = ExtensionResult<'a, WrapKeyToFileExtension,
 pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
     /// Wrap a key to a file
     /// This enables wrapping keys that don't fit in the buffers used by
-    /// [`write_file`](FilesystemClient::write_file) and [`read_file`](FilesystemClient::read_file)
+    /// [`write_file`](trussed::client::FilesystemClient::write_file) and [`read_file`](trussed::client::FilesystemClient::read_file)
     fn wrap_key_to_file(
         &mut self,
         mechanism: Mechanism,
@@ -287,7 +290,7 @@ pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
 
     /// Wrap a key to a file
     /// This enables wrapping keys that don't fit in the buffers used by
-    /// [`write_file`](FilesystemClient::write_file) and [`read_file`](FilesystemClient::read_file)
+    /// [`write_file`](trussed::client::FilesystemClient::write_file) and [`read_file`](trussed::client::FilesystemClient::read_file)
     fn unwrap_key_from_file(
         &mut self,
         mechanism: Mechanism,
