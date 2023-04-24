@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC0-1.0
 
 # trussed-staging
 
-`trussed-staging` is a custom backend for [Trussed][] that provides functionnality that is not yet merged upstream. I serves as a staging ground for new APIs
+`trussed-staging` is a custom backend for [Trussed][] that provides functionality that is not yet merged upstream. It serves as a staging ground for new APIs.
 
 [Trussed]: https://github.com/trussed-dev/trussed
 
