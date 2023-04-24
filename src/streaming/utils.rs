@@ -12,7 +12,7 @@ use trussed::{
 
 /// Write a large file (can be larger than 1KiB)
 ///
-/// This is a wrapper around the [chunked writes api](crate::client::FilesystemClient::start_chunked_write)
+/// This is a wrapper around the [chunked writes api](ChunkedClient)
 pub fn write_all(
     client: &mut impl ChunkedClient,
     location: Location,
