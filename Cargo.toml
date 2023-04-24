@@ -1,0 +1,39 @@
+# Copyright (C) Nitrokey GmbH
+# SPDX-License-Identifier: CC0-1.0
+
+[package]
+name = "trussed-staging"
+version = "0.1.0"
+authors = ["Nitrokey GmbH <info@nitrokey.com>"]
+edition = "2021"
+repository = "https://github.com/trussed-dev/trussed-staging"
+license = "Apache-2.0 OR MIT"
+description = "Work in progress trussed features"
+
+[dependencies]
+trussed = { version = "0.1.0", features = ["serde-extensions"] }
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["heapless", "reduced-round"], optional = true }
+serde = { version = "1.0.160", default-features = false, features = ["derive"] }
+rand_core = { version = "0.6.4", default-features = false }
+delog = "0.1.6"
+
+[dev-dependencies]
+trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }
+
+[features]
+default = ["chacha20poly1305", "virt"]
+wrap-key-to-file = ["chacha20poly1305"]
+
+virt = ["std", "trussed/virt"]
+std = []
+
+# used for delog
+log-all = []
+log-none = []
+log-info = []
+log-debug = []
+log-warn = []
+log-error = []
+
+[patch.crates-io]
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "55ea391367fce4bf5093ff2d3c79041d7aef0485" }
