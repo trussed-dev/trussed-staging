@@ -17,6 +17,7 @@ serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 rand_core = { version = "0.6.4", default-features = false }
 delog = "0.1.6"
 littlefs2 = "0.4.0"
+serde-byte-array = "0.1.2"
 
 [dev-dependencies]
 trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }

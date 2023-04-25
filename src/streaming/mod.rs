@@ -11,7 +11,9 @@ use chacha20poly1305::{
     aead::stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31},
     ChaCha8Poly1305, KeyInit,
 };
+use rand_core::RngCore;
 use serde::{Deserialize, Serialize};
+use serde_byte_array::ByteArray;
 use trussed::{
     client::FilesystemClient,
     config::MAX_MESSAGE_LENGTH,
@@ -19,7 +21,7 @@ use trussed::{
     serde_extensions::{Extension, ExtensionClient, ExtensionImpl, ExtensionResult},
     service::{Filestore, Keystore, ServiceResources},
     store::Store,
-    types::{CoreContext, KeyId, Location, Message, Path, PathBuf, ShortData, UserAttribute},
+    types::{CoreContext, KeyId, Location, Message, Path, PathBuf, UserAttribute},
     Bytes, Error,
 };
 
@@ -102,7 +104,8 @@ pub enum ChunkedReply {
 mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed::types::{KeyId, Location, Message, PathBuf, ShortData, UserAttribute};
+    use serde_byte_array::ByteArray;
+    use trussed::types::{KeyId, Location, Message, PathBuf, UserAttribute};
     use trussed::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -154,7 +157,7 @@ mod request {
         pub path: PathBuf,
         pub user_attribute: Option<UserAttribute>,
         pub key: KeyId,
-        pub nonce: ShortData,
+        pub nonce: Option<ByteArray<CHACHA8_STREAM_NONCE_LEN>>,
     }
 
     #[cfg(feature = "encrypted-chunked")]
@@ -426,6 +429,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
         request: &ChunkedRequest,
         resources: &mut ServiceResources<P>,
     ) -> Result<ChunkedReply, Error> {
+        let rng = &mut resources.rng()?;
         let keystore = &mut resources.keystore(core_ctx)?;
         let filestore = &mut resources.filestore(core_ctx);
         let client_id = &core_ctx.path;
@@ -505,10 +509,13 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     Some(Kind::Symmetric(CHACHA8_KEY_LEN)),
                     &request.key,
                 )?;
+                let nonce = request.nonce.map(|n| *n).unwrap_or_else(|| {
+                    let mut nonce = [0; CHACHA8_STREAM_NONCE_LEN];
+                    rng.fill_bytes(&mut nonce);
+                    nonce
+                });
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
-                    (&**request.nonce)
-                        .try_into()
-                        .map_err(|_| Error::WrongMessageLength)?;
+                    (&nonce).into();
                 let aead = ChaCha8Poly1305::new((&*key.material).into());
                 let encryptor = EncryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 store::start_chunked_write(
@@ -714,9 +721,9 @@ fn read_encrypted_chunk(
     }
 }
 
-const POLY1305_TAG_LEN: usize = 16;
-const CHACHA8_KEY_LEN: usize = 32;
-const CHACHA8_STREAM_NONCE_LEN: usize = 8;
+pub const POLY1305_TAG_LEN: usize = 16;
+pub const CHACHA8_KEY_LEN: usize = 32;
+pub const CHACHA8_STREAM_NONCE_LEN: usize = 8;
 /// Calculate the decrypted length of a chunked encrypted file
 fn chunked_decrypted_len(len: usize) -> Result<usize, Error> {
     let len = len.checked_sub(CHACHA8_STREAM_NONCE_LEN).ok_or_else(|| {
@@ -765,7 +772,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
         location: Location,
         path: PathBuf,
         key: KeyId,
-        nonce: ShortData,
+        nonce: Option<ByteArray<CHACHA8_STREAM_NONCE_LEN>>,
         user_attribute: Option<UserAttribute>,
     ) -> ChunkedResult<'_, reply::StartEncryptedChunkedWrite, Self> {
         self.extension(request::StartEncryptedChunkedWrite {

@@ -2,13 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use littlefs2::path::PathBuf;
+use serde_byte_array::ByteArray;
 
-use crate::streaming::ChunkedClient;
 use trussed::{
     syscall, try_syscall,
-    types::{Location, Message, UserAttribute},
+    types::{KeyId, Location, Message, UserAttribute},
     Error,
 };
+
+use super::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
+
+#[derive(Clone, Copy)]
+pub struct EncryptionData {
+    pub key: KeyId,
+    pub nonce: Option<ByteArray<CHACHA8_STREAM_NONCE_LEN>>,
+}
 
 /// Write a large file (can be larger than 1KiB)
 ///
@@ -19,13 +27,14 @@ pub fn write_all(
     path: PathBuf,
     data: &[u8],
     user_attribute: Option<UserAttribute>,
+    encryption: Option<EncryptionData>,
 ) -> Result<(), Error> {
-    if let Ok(msg) = Message::from_slice(data) {
+    if let (Ok(msg), None) = (Message::from_slice(data), encryption) {
         // Fast path for small files
         try_syscall!(client.write_file(location, path, msg, user_attribute))?;
         Ok(())
     } else {
-        write_chunked(client, location, path, data, user_attribute)
+        write_chunked(client, location, path, data, user_attribute, encryption)
     }
 }
 
@@ -35,8 +44,9 @@ fn write_chunked(
     path: PathBuf,
     data: &[u8],
     user_attribute: Option<UserAttribute>,
+    encryption: Option<EncryptionData>,
 ) -> Result<(), Error> {
-    let res = write_chunked_inner(client, location, path, data, user_attribute);
+    let res = write_chunked_inner(client, location, path, data, user_attribute, encryption);
     if res.is_err() {
         syscall!(client.abort_chunked_write());
         return res;
@@ -50,13 +60,24 @@ fn write_chunked_inner(
     path: PathBuf,
     data: &[u8],
     user_attribute: Option<UserAttribute>,
+    encryption: Option<EncryptionData>,
 ) -> Result<(), Error> {
     let msg = Message::new();
     let chunk_size = msg.capacity();
     let chunks = data.chunks(chunk_size).map(|chunk| {
         Message::from_slice(chunk).expect("Iteration over chunks yields maximum of chunk_size")
     });
-    try_syscall!(client.start_chunked_write(location, path, user_attribute))?;
+    if let Some(encryption_data) = encryption {
+        try_syscall!(client.start_encrypted_chunked_write(
+            location,
+            path,
+            encryption_data.key,
+            encryption_data.nonce,
+            user_attribute,
+        ))?;
+    } else {
+        try_syscall!(client.start_chunked_write(location, path, user_attribute))?;
+    }
     let mut written = 0;
     for chunk in chunks {
         written += chunk.len();
