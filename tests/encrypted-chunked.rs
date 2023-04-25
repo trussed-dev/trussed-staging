@@ -4,11 +4,79 @@
 #![cfg(all(feature = "virt", feature = "encrypted-chunked"))]
 
 use littlefs2::path::PathBuf;
+use serde_byte_array::ByteArray;
 use trussed::{
     client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location, Bytes,
     Error,
 };
-use trussed_staging::{streaming::ChunkedClient, virt::with_ram_client};
+use trussed_staging::{
+    streaming::{
+        utils::{self, EncryptionData},
+        ChunkedClient,
+    },
+    virt::with_ram_client,
+};
+
+fn test_write_all(location: Location) {
+    with_ram_client("test chunked", |mut client| {
+        let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
+        let path = PathBuf::from("foo");
+        utils::write_all(
+            &mut client,
+            location,
+            path.clone(),
+            &[48; 1234],
+            None,
+            Some(EncryptionData { key, nonce: None }),
+        )
+        .unwrap();
+
+        syscall!(client.start_encrypted_chunked_read(location, path, key));
+        let data = syscall!(client.read_file_chunk()).data;
+        assert_eq!(&data, &[48; 1024]);
+        let data = syscall!(client.read_file_chunk()).data;
+        assert_eq!(&data, &[48; 1234 - 1024]);
+    });
+}
+
+fn test_write_all_small(location: Location) {
+    with_ram_client("test chunked", |mut client| {
+        let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
+        let path = PathBuf::from("foo2");
+        utils::write_all(
+            &mut client,
+            location,
+            path.clone(),
+            &[48; 1023],
+            None,
+            Some(EncryptionData { key, nonce: None }),
+        )
+        .unwrap();
+
+        syscall!(client.start_encrypted_chunked_read(location, path, key));
+        let data = syscall!(client.read_file_chunk()).data;
+        assert_eq!(&data, &[48; 1023]);
+    });
+}
+
+#[test]
+fn write_all_volatile() {
+    test_write_all(Location::Volatile);
+    test_write_all_small(Location::Volatile);
+}
+
+#[test]
+fn write_all_external() {
+    test_write_all(Location::External);
+    test_write_all_small(Location::External);
+}
+
+#[test]
+fn write_all_internal() {
+    test_write_all(Location::Internal);
+    test_write_all_small(Location::Internal);
+}
+
 #[test]
 fn encrypted_filesystem() {
     with_ram_client("chunked-tests", |mut client| {
@@ -28,7 +96,7 @@ fn encrypted_filesystem() {
             Location::Internal,
             PathBuf::from("test_file"),
             key,
-            Bytes::from_slice(&[0; 8]).unwrap(),
+            Some(ByteArray::from([0; 8])),
             None
         ));
 
@@ -71,7 +139,7 @@ fn encrypted_filesystem() {
             Location::Internal,
             PathBuf::from("test_file"),
             key,
-            Bytes::from_slice(&[1; 8]).unwrap(),
+            Some(ByteArray::from([1; 8])),
             None
         ));
 

@@ -12,7 +12,7 @@ use trussed_staging::{
 fn test_write_all(location: Location) {
     with_ram_client("test chunked", |mut client| {
         let path = PathBuf::from("foo");
-        utils::write_all(&mut client, location, path.clone(), &[48; 1234], None).unwrap();
+        utils::write_all(&mut client, location, path.clone(), &[48; 1234], None, None).unwrap();
 
         let data = syscall!(client.start_chunked_read(location, path)).data;
         assert_eq!(&data, &[48; 1024]);
@@ -24,7 +24,7 @@ fn test_write_all(location: Location) {
 fn test_write_all_small(location: Location) {
     with_ram_client("test chunked", |mut client| {
         let path = PathBuf::from("foo2");
-        utils::write_all(&mut client, location, path.clone(), &[48; 1023], None).unwrap();
+        utils::write_all(&mut client, location, path.clone(), &[48; 1023], None, None).unwrap();
 
         let data = syscall!(client.start_chunked_read(location, path)).data;
         assert_eq!(&data, &[48; 1023]);
