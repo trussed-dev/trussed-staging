@@ -8,6 +8,9 @@ use crate::wrap_key_to_file::WrapKeyToFileExtension;
 
 use crate::{StagingBackend, StagingContext};
 
+#[cfg(feature = "chunked")]
+use crate::streaming::ChunkedExtension;
+
 #[derive(Default, Debug)]
 pub struct Dispatcher {
     backend: StagingBackend,
@@ -22,6 +25,8 @@ pub enum BackendIds {
 pub enum ExtensionIds {
     #[cfg(feature = "wrap-key-to-file")]
     WrapKeyToFile,
+    #[cfg(feature = "chunked")]
+    Chunked,
 }
 
 #[cfg(feature = "wrap-key-to-file")]
@@ -30,11 +35,19 @@ impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::WrapKeyToFile;
 }
 
+#[cfg(feature = "chunked")]
+impl ExtensionId<ChunkedExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::Chunked;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
             #[cfg(feature = "wrap-key-to-file")]
             ExtensionIds::WrapKeyToFile => 0,
+            #[cfg(feature = "chunked")]
+            ExtensionIds::Chunked => 1,
         }
     }
 }
@@ -45,6 +58,8 @@ impl TryFrom<u8> for ExtensionIds {
         match value {
             #[cfg(feature = "wrap-key-to-file")]
             0 => Ok(Self::WrapKeyToFile),
+            #[cfg(feature = "chunked")]
+            1 => Ok(Self::Chunked),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -81,12 +96,25 @@ impl ExtensionDispatch for Dispatcher {
         // See https://github.com/rust-lang/rust/issues/78123#
         match *extension {
             #[cfg(feature = "wrap-key-to-file")]
-            ExtensionIds::WrapKeyToFile => self.backend.extension_request_serialized(
+            ExtensionIds::WrapKeyToFile => <StagingBackend as ExtensionImpl<
+                WrapKeyToFileExtension,
+            >>::extension_request_serialized(
+                &mut self.backend,
                 &mut ctx.core,
                 &mut ctx.backends,
                 request,
                 resources,
             ),
+            #[cfg(feature = "chunked")]
+            ExtensionIds::Chunked => {
+                <StagingBackend as ExtensionImpl<ChunkedExtension>>::extension_request_serialized(
+                    &mut self.backend,
+                    &mut ctx.core,
+                    &mut ctx.backends,
+                    request,
+                    resources,
+                )
+            }
         }
     }
 }

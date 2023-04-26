@@ -9,7 +9,7 @@ check:
 lint:
 	cargo clippy --all-features --all-targets -- --deny warnings
 	cargo fmt -- --check
-	RUSTDOCFLAGS='-Dwarnings' cargo doc --no-deps
+	RUSTDOCFLAGS='-Dwarnings' cargo doc --no-deps --all-features
 	reuse lint
 
 .PHONY: test

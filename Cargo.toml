@@ -16,6 +16,8 @@ chacha20poly1305 = { version = "0.10", default-features = false, features = ["he
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 rand_core = { version = "0.6.4", default-features = false }
 delog = "0.1.6"
+littlefs2 = "0.4.0"
+serde-byte-array = "0.1.2"
 
 [dev-dependencies]
 trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }
@@ -24,6 +26,8 @@ trussed = { version = "0.1.0", default-features = false, features = ["serde-exte
 default = []
 
 wrap-key-to-file = ["chacha20poly1305"]
+chunked = []
+encrypted-chunked = ["chunked", "chacha20poly1305/stream"]
 
 virt = ["std", "trussed/virt"]
 std = []
