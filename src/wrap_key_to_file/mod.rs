@@ -249,7 +249,7 @@ impl ExtensionImpl<WrapKeyToFileExtension> for super::StagingBackend {
         resources: &mut ServiceResources<P>,
     ) -> Result<WrapKeyToFileReply, Error> {
         let keystore = &mut resources.keystore(core_ctx)?;
-        let filestore = &mut resources.filestore(core_ctx);
+        let filestore = &mut resources.filestore(core_ctx.path.clone());
         match request {
             WrapKeyToFileRequest::WrapKeyToFile(request) => {
                 wrap_key_to_file(keystore, filestore, request).map(Into::into)

@@ -431,7 +431,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
     ) -> Result<ChunkedReply, Error> {
         let rng = &mut resources.rng()?;
         let keystore = &mut resources.keystore(core_ctx)?;
-        let filestore = &mut resources.filestore(core_ctx);
+        let filestore = &mut resources.filestore(core_ctx.path.clone());
         let client_id = &core_ctx.path;
         let store = resources.platform_mut().store();
         match request {
