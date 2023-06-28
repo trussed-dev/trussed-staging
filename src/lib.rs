@@ -18,6 +18,9 @@ pub mod wrap_key_to_file;
 #[cfg(feature = "chunked")]
 pub mod streaming;
 
+#[cfg(feature = "hmacsha256p256")]
+pub mod hmacsha256p256;
+
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct StagingBackend {}
