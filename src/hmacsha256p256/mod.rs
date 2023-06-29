@@ -11,6 +11,7 @@ use trussed::{
     types::{Bytes, CoreContext, KeyId, Location, Mechanism},
     Error,
 };
+use trussed::key::Kind::Symmetric;
 
 #[derive(Debug, Default)]
 pub struct HmacSha256P256Extension;
@@ -147,7 +148,7 @@ pub fn derive_key_from_hash(
     type HmacSha256P256 = Hmac<sha2::Sha256>;
 
     let key_id = request.key;
-    let key = keystore.load_key(key::Secrecy::Secret, None, &key_id)?;
+    let key = keystore.load_key(key::Secrecy::Secret, Some(Symmetric(32)), &key_id)?;
     let shared_secret = key.material;
 
     let mut mac =
