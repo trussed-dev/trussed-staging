@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use serde::{Deserialize, Serialize};
-use trussed::types::{Message};
+use trussed::types::Message;
 use trussed::{
     client::ClientError,
     key::{self, Kind},
