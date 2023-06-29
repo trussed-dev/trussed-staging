@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use serde::{Deserialize, Serialize};
-use trussed::types::SerializedKey;
+use trussed::types::{Message};
 use trussed::{
     client::ClientError,
     key::{self, Kind},
@@ -25,7 +25,7 @@ pub enum HmacSha256P256Request {
 mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed::types::{KeyId, Location, Mechanism, Message, SerializedKey};
+    use trussed::types::{KeyId, Location, Mechanism, Message};
     use trussed::Error;
 
     #[derive(Debug, Deserialize, Serialize)]
@@ -56,7 +56,8 @@ mod request {
     pub struct InjectAnyKey {
         pub location: Location,
         pub kind: Kind,
-        pub raw_key: SerializedKey,
+        // pub raw_key: SerializedKey,
+        pub raw_key: Message,
     }
 
     impl TryFrom<HmacSha256P256Request> for InjectAnyKey {
@@ -224,7 +225,8 @@ pub trait HmacSha256P256Client: ExtensionClient<HmacSha256P256Extension> {
 
     fn inject_any_key(
         &mut self,
-        raw_key: SerializedKey,
+        // raw_key: SerializedKey,
+        raw_key: Message,
         location: Location,
         kind: Kind,
     ) -> HmacSha256P256Result<'_, reply::InjectAnyKey, Self> {
