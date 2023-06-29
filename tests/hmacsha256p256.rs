@@ -17,22 +17,22 @@ use trussed_staging::hmacsha256p256::HmacSha256P256Client;
 
 #[test]
 fn hmac_inject_any() {
+    use trussed::types::Message;
     with_ram_client("staging-tests", |mut client| {
         let client = &mut client;
 
         let key = syscall!(client.inject_any_key(
-            b"12345678123456781234567812345678",
+            Message::from_slice(b"12345678123456781234567812345678").unwrap(),
             Volatile,
             Kind::P256
         ))
         .key
         .unwrap();
 
-        let pk = syscall!(client.derive_p256_public_key(key, Location::Volatile)).key;
+        let _pk = syscall!(client.derive_p256_public_key(key, Location::Volatile)).key;
 
         let signature =
             syscall!(client.sign(Mechanism::P256, key, &[], SignatureSerialization::Raw)).signature;
         assert!(signature.len() > 0);
-        todo!();
     });
 }

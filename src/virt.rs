@@ -11,6 +11,9 @@ use crate::{StagingBackend, StagingContext};
 #[cfg(feature = "chunked")]
 use crate::streaming::ChunkedExtension;
 
+#[cfg(feature = "hmacsha256p256")]
+use crate::hmacsha256p256::HmacSha256P256Extension;
+
 #[derive(Default, Debug)]
 pub struct Dispatcher {
     backend: StagingBackend,
@@ -27,6 +30,14 @@ pub enum ExtensionIds {
     WrapKeyToFile,
     #[cfg(feature = "chunked")]
     Chunked,
+    #[cfg(feature = "hmacsha256p256")]
+    HmacShaP256,
+}
+
+#[cfg(feature = "hmacsha256p256")]
+impl ExtensionId<HmacSha256P256Extension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::HmacShaP256;
 }
 
 #[cfg(feature = "wrap-key-to-file")]
@@ -48,6 +59,8 @@ impl From<ExtensionIds> for u8 {
             ExtensionIds::WrapKeyToFile => 0,
             #[cfg(feature = "chunked")]
             ExtensionIds::Chunked => 1,
+            #[cfg(feature = "hmacsha256p256")]
+            ExtensionIds::HmacShaP256 => 2,
         }
     }
 }
@@ -60,6 +73,8 @@ impl TryFrom<u8> for ExtensionIds {
             0 => Ok(Self::WrapKeyToFile),
             #[cfg(feature = "chunked")]
             1 => Ok(Self::Chunked),
+            #[cfg(feature = "hmacsha256p256")]
+            2 => Ok(Self::HmacShaP256),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -98,6 +113,16 @@ impl ExtensionDispatch for Dispatcher {
             #[cfg(feature = "wrap-key-to-file")]
             ExtensionIds::WrapKeyToFile => <StagingBackend as ExtensionImpl<
                 WrapKeyToFileExtension,
+            >>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
+            #[cfg(feature = "hmacsha256p256")]
+            ExtensionIds::HmacShaP256 => <StagingBackend as ExtensionImpl<
+                HmacSha256P256Extension,
             >>::extension_request_serialized(
                 &mut self.backend,
                 &mut ctx.core,
