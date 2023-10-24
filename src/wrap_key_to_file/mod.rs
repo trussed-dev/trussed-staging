@@ -28,7 +28,7 @@ pub enum WrapKeyToFileRequest {
     UnwrapKeyFromFile(request::UnwrapKeyFromFile),
 }
 
-mod request {
+pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use trussed::types::{KeyId, Location, Mechanism, Message, PathBuf};
@@ -94,13 +94,13 @@ pub enum WrapKeyToFileReply {
     UnwrapKeyFromFile(reply::UnwrapKeyFromFile),
 }
 
-mod reply {
+pub mod reply {
     use serde::{Deserialize, Serialize};
     use trussed::{types::KeyId, Error};
 
     use super::*;
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Default)]
     #[non_exhaustive]
     pub struct WrapKeyToFile {}
 
