@@ -268,9 +268,9 @@ pub fn abort_chunked_write(
     path: &PathBuf,
     location: Location,
 ) -> bool {
-    let Ok(path) = chunks_path(client_id,path, location) else {
-            return false;
-        };
+    let Ok(path) = chunks_path(client_id, path, location) else {
+        return false;
+    };
     trussed::store::delete(store, Location::Volatile, &path)
 }
 
