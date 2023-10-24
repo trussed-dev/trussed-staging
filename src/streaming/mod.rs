@@ -768,7 +768,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin writing an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be written with [`write_file_chunk`](ChunkedClient::write_file_chunk).
-    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`] is transfered.
     #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_write(
         &mut self,
@@ -790,7 +790,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading a file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
     fn start_chunked_read(
         &mut self,
         location: Location,
@@ -802,7 +802,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
     /// Only once the entire file has been read does the data have been properly authenticated.
     #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_read(
