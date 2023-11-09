@@ -1,9 +1,16 @@
-use littlefs2::path;
-use littlefs2::path::{Path, PathBuf};
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
+use littlefs2::{
+    fs::DirEntry,
+    path,
+    path::{Path, PathBuf},
+};
 use serde::{Deserialize, Serialize};
 use trussed::{
     serde_extensions::{Extension, ExtensionClient, ExtensionImpl, ExtensionResult},
     store::Store,
+    types::Location,
     Error,
 };
 
@@ -141,11 +148,24 @@ pub trait ManageClient: ExtensionClient<ManageExtension> {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct State {
-    pub ifs_to_preserve: &'static [&'static Path],
-    pub efs_to_preserve: &'static [&'static Path],
-    pub vfs_to_preserve: &'static [&'static Path],
+    pub should_preserve_file: fn(&Path, location: Location) -> bool,
+}
+
+impl Default for State {
+    fn default() -> State {
+        State {
+            should_preserve_file: |_, _| false,
+        }
+    }
+}
+
+fn callback(
+    should_preserve_file: fn(&Path, location: Location) -> bool,
+    location: Location,
+) -> impl Fn(&DirEntry) -> bool {
+    move |f| !should_preserve_file(f.file_name(), location)
 }
 
 impl<C: ExtensionClient<ManageExtension>> ManageClient for C {}
@@ -165,35 +185,27 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                 let ifs = store.ifs();
                 let efs = store.efs();
                 let vfs = store.vfs();
-                ifs.remove_dir_all_where(path!("/"), &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.ifs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+
+                ifs.remove_dir_all_where(
+                    path!("/"),
+                    &callback(self.manage.should_preserve_file, Location::Internal),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete ifs: {_err:?}");
                     Error::FunctionFailed
                 })?;
-                efs.remove_dir_all_where(path!("/"), &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.efs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+                efs.remove_dir_all_where(
+                    path!("/"),
+                    &callback(self.manage.should_preserve_file, Location::External),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete efs: {_err:?}");
                     Error::FunctionFailed
                 })?;
-                vfs.remove_dir_all_where(path!("/"), &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.vfs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+                vfs.remove_dir_all_where(
+                    path!("/"),
+                    &callback(self.manage.should_preserve_file, Location::Volatile),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete vfs: {_err:?}");
                     Error::FunctionFailed
@@ -206,35 +218,26 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                 let ifs = store.ifs();
                 let efs = store.efs();
                 let vfs = store.vfs();
-                ifs.remove_dir_all_where(client, &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.ifs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+                ifs.remove_dir_all_where(
+                    client,
+                    &callback(self.manage.should_preserve_file, Location::Internal),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete ifs: {_err:?}");
                     Error::FunctionFailed
                 })?;
-                efs.remove_dir_all_where(client, &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.efs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+                efs.remove_dir_all_where(
+                    client,
+                    &callback(self.manage.should_preserve_file, Location::External),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete efs: {_err:?}");
                     Error::FunctionFailed
                 })?;
-                vfs.remove_dir_all_where(client, &|f| {
-                    let file_name = f.file_name();
-                    if self.manage.vfs_to_preserve.contains(&file_name) {
-                        return false;
-                    }
-                    true
-                })
+                vfs.remove_dir_all_where(
+                    client,
+                    &callback(self.manage.should_preserve_file, Location::Volatile),
+                )
                 .map_err(|_err| {
                     debug!("Failed to delete vfs: {_err:?}");
                     Error::FunctionFailed
