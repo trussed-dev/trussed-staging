@@ -430,7 +430,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
         resources: &mut ServiceResources<P>,
     ) -> Result<ChunkedReply, Error> {
         let rng = &mut resources.rng()?;
-        let keystore = &mut resources.keystore(core_ctx)?;
+        let keystore = &mut resources.keystore(core_ctx.path.clone())?;
         let filestore = &mut resources.filestore(core_ctx.path.clone());
         let client_id = &core_ctx.path;
         let store = resources.platform_mut().store();
@@ -482,7 +482,8 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 Ok(reply::WriteChunk {}.into())
             }
             ChunkedRequest::AbortChunkedWrite(_request) => {
-                let Some(ChunkedIoState::Write(ref write_state)) = backend_ctx.chunked_io_state else {
+                let Some(ChunkedIoState::Write(ref write_state)) = backend_ctx.chunked_io_state
+                else {
                     return Ok(reply::AbortChunkedWrite { aborted: false }.into());
                 };
                 let aborted = store::abort_chunked_write(
@@ -673,7 +674,9 @@ fn read_encrypted_chunk(
     ctx: &mut StagingContext,
 ) -> Result<ChunkedReply, Error> {
     let Some(ChunkedIoState::EncryptedRead(ref mut read_state)) = ctx.chunked_io_state else {
-        unreachable!("Read encrypted chunk can only be called in the context encrypted chunk reads");
+        unreachable!(
+            "Read encrypted chunk can only be called in the context encrypted chunk reads"
+        );
     };
     let (mut data, len): (Bytes<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>, usize) =
         store::filestore_read_chunk(
@@ -765,7 +768,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin writing an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be written with [`write_file_chunk`](ChunkedClient::write_file_chunk).
-    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`] is transfered.
     #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_write(
         &mut self,
@@ -787,7 +790,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading a file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
     fn start_chunked_read(
         &mut self,
         location: Location,
@@ -799,7 +802,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`](trussed::types::Message) is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
     /// Only once the entire file has been read does the data have been properly authenticated.
     #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_read(

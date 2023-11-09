@@ -28,7 +28,7 @@ pub enum WrapKeyToFileRequest {
     UnwrapKeyFromFile(request::UnwrapKeyFromFile),
 }
 
-mod request {
+pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use trussed::types::{KeyId, Location, Mechanism, Message, PathBuf};
@@ -94,13 +94,13 @@ pub enum WrapKeyToFileReply {
     UnwrapKeyFromFile(reply::UnwrapKeyFromFile),
 }
 
-mod reply {
+pub mod reply {
     use serde::{Deserialize, Serialize};
     use trussed::{types::KeyId, Error};
 
     use super::*;
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Default)]
     #[non_exhaustive]
     pub struct WrapKeyToFile {}
 
@@ -248,7 +248,7 @@ impl ExtensionImpl<WrapKeyToFileExtension> for super::StagingBackend {
         request: &WrapKeyToFileRequest,
         resources: &mut ServiceResources<P>,
     ) -> Result<WrapKeyToFileReply, Error> {
-        let keystore = &mut resources.keystore(core_ctx)?;
+        let keystore = &mut resources.keystore(core_ctx.path.clone())?;
         let filestore = &mut resources.filestore(core_ctx.path.clone());
         match request {
             WrapKeyToFileRequest::WrapKeyToFile(request) => {

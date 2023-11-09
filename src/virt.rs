@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-//! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`StagingBackend`](crate::StagingBackend) backend.
+//! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`StagingBackend`] backend.
 
 #[cfg(feature = "wrap-key-to-file")]
 use crate::wrap_key_to_file::WrapKeyToFileExtension;
