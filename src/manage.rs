@@ -232,7 +232,7 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                     return Err(Error::InvalidPath);
                 }
 
-                let path = path!("/").join(&client);
+                let path = path!("/").join(client);
 
                 let ifs = store.ifs();
                 let efs = store.efs();
