@@ -39,21 +39,40 @@ fn device_factory_reset() {
                 Bytes::from_slice(b"data").unwrap(),
                 None
             ));
+            syscall!(client1.write_file(
+                Location::Internal,
+                "to_delete_internal".into(),
+                Bytes::from_slice(b"data").unwrap(),
+                None,
+            ));
+            syscall!(client1.write_file(
+                Location::External,
+                "to_delete_external".into(),
+                Bytes::from_slice(b"data").unwrap(),
+                None,
+            ));
+            syscall!(client1.write_file(
+                Location::Volatile,
+                "to_delete_volatile".into(),
+                Bytes::from_slice(b"data").unwrap(),
+                None
+            ));
+
             syscall!(client2.write_file(
                 Location::Internal,
-                "to_save_internal".into(),
+                "to_delete_internal".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::External,
-                "to_save_external".into(),
+                "to_delete_external".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::Volatile,
-                "to_save_volatile".into(),
+                "to_delete_volatile".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None
             ));
@@ -74,21 +93,36 @@ fn device_factory_reset() {
                     .metadata
                     .is_some()
             );
-            assert!(
-                syscall!(client2.entry_metadata(Location::Internal, "to_save_internal".into()))
-                    .metadata
-                    .is_none()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::External, "to_save_external".into()))
-                    .metadata
-                    .is_none()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::Volatile, "to_save_volatile".into()))
-                    .metadata
-                    .is_none()
-            );
+            assert!(syscall!(
+                client1.entry_metadata(Location::Internal, "to_delete_internal".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client1.entry_metadata(Location::External, "to_delete_external".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client1.entry_metadata(Location::Volatile, "to_delete_volatile".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client2.entry_metadata(Location::Internal, "to_delete_internal".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client2.entry_metadata(Location::External, "to_delete_external".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client2.entry_metadata(Location::Volatile, "to_delete_volatile".into())
+            )
+            .metadata
+            .is_none());
         },
     );
 }
@@ -119,19 +153,19 @@ fn client_factory_reset() {
             ));
             syscall!(client2.write_file(
                 Location::Internal,
-                "to_save_internal".into(),
+                "to_delete_internal".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::External,
-                "to_save_external".into(),
+                "to_delete_external".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::Volatile,
-                "to_save_volatile".into(),
+                "to_delete_volatile".into(),
                 Bytes::from_slice(b"data").unwrap(),
                 None
             ));
@@ -152,23 +186,38 @@ fn client_factory_reset() {
                     .metadata
                     .is_some()
             );
+            assert!(syscall!(
+                client1.entry_metadata(Location::Internal, "to_delete_internal".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client1.entry_metadata(Location::External, "to_delete_external".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client1.entry_metadata(Location::Volatile, "to_delete_volatile".into())
+            )
+            .metadata
+            .is_none());
 
             // DATA for other clients is still there
-            assert!(
-                syscall!(client2.entry_metadata(Location::Internal, "to_save_internal".into()))
-                    .metadata
-                    .is_some()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::External, "to_save_external".into()))
-                    .metadata
-                    .is_some()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::Volatile, "to_save_volatile".into()))
-                    .metadata
-                    .is_some()
-            );
+            assert!(syscall!(
+                client2.entry_metadata(Location::Internal, "to_delete_internal".into())
+            )
+            .metadata
+            .is_some());
+            assert!(syscall!(
+                client2.entry_metadata(Location::External, "to_delete_external".into())
+            )
+            .metadata
+            .is_some());
+            assert!(syscall!(
+                client2.entry_metadata(Location::Volatile, "to_delete_volatile".into())
+            )
+            .metadata
+            .is_some());
 
             syscall!(client1.factory_reset_client(path!("client2")));
             assert!(
@@ -187,22 +236,22 @@ fn client_factory_reset() {
                     .is_some()
             );
 
-            // DATA for other clients is still there
-            assert!(
-                syscall!(client2.entry_metadata(Location::Internal, "to_save_internal".into()))
-                    .metadata
-                    .is_none()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::External, "to_save_external".into()))
-                    .metadata
-                    .is_none()
-            );
-            assert!(
-                syscall!(client2.entry_metadata(Location::Volatile, "to_save_volatile".into()))
-                    .metadata
-                    .is_none()
-            );
+            // DATA for other clients is deleted
+            assert!(syscall!(
+                client2.entry_metadata(Location::Internal, "to_delete_internal".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client2.entry_metadata(Location::External, "to_delete_external".into())
+            )
+            .metadata
+            .is_none());
+            assert!(syscall!(
+                client2.entry_metadata(Location::Volatile, "to_delete_volatile".into())
+            )
+            .metadata
+            .is_none());
         },
     );
 }
