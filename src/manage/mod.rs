@@ -150,6 +150,18 @@ pub trait ManageClient: ExtensionClient<ManageExtension> {
 
 #[derive(Debug, Clone)]
 pub struct State {
+    /// Function called during a factory reset (of a client or the whole device)
+    ///
+    /// The path start all  start with the root. Here is an example such function:
+    /// ```rust
+    ///# use trussed::types::{Path, Location};
+    ///# use littlefs2::path;
+    /// fn should_preserve(path: &Path, location: Location) -> bool {
+    ///     (location == Location::Internal && path == path!("/client1/dat/to_save_internal"))
+    ///         || (location == Location::External && path == path!("/client1/dat/to_save_external"))
+    ///         || (location == Location::Volatile && path == path!("/client1/dat/to_save_volatile"))
+    /// }
+    /// ```
     pub should_preserve_file: fn(&Path, location: Location) -> bool,
 }
 
@@ -165,7 +177,7 @@ fn callback(
     should_preserve_file: fn(&Path, location: Location) -> bool,
     location: Location,
 ) -> impl Fn(&DirEntry) -> bool {
-    move |f| !should_preserve_file(f.file_name(), location)
+    move |f| !should_preserve_file(f.path(), location)
 }
 
 impl<C: ExtensionClient<ManageExtension>> ManageClient for C {}
@@ -215,11 +227,18 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
             ManageRequest::FactoryResetClient(FactoryResetClientRequest { client }) => {
                 let platform = resources.platform();
                 let store = platform.store();
+
+                if client.parent().is_some() {
+                    return Err(Error::InvalidPath);
+                }
+
+                let path = path!("/").join(&client);
+
                 let ifs = store.ifs();
                 let efs = store.efs();
                 let vfs = store.vfs();
                 ifs.remove_dir_all_where(
-                    client,
+                    &path,
                     &callback(self.manage.should_preserve_file, Location::Internal),
                 )
                 .map_err(|_err| {
@@ -227,7 +246,7 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                     Error::FunctionFailed
                 })?;
                 efs.remove_dir_all_where(
-                    client,
+                    &path,
                     &callback(self.manage.should_preserve_file, Location::External),
                 )
                 .map_err(|_err| {
@@ -235,7 +254,7 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                     Error::FunctionFailed
                 })?;
                 vfs.remove_dir_all_where(
-                    client,
+                    &path,
                     &callback(self.manage.should_preserve_file, Location::Volatile),
                 )
                 .map_err(|_err| {
