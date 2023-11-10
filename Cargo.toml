@@ -23,11 +23,12 @@ serde-byte-array = "0.1.2"
 trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }
 
 [features]
-default = []
+default = ["manage"]
 
 wrap-key-to-file = ["chacha20poly1305"]
 chunked = []
 encrypted-chunked = ["chunked", "chacha20poly1305/stream"]
+manage = []
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -41,4 +42,5 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "df720980888e3e0d5487250bd14a28db02a5f13b" }
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "976372331be2f1b37cab532420cb6c55e0d54473" }
+littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "ae57c299312700ca4a3c4437d784a0f4e4f56759" }

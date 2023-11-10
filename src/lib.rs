@@ -18,13 +18,22 @@ pub mod wrap_key_to_file;
 #[cfg(feature = "chunked")]
 pub mod streaming;
 
+#[cfg(feature = "manage")]
+pub mod manage;
+
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
-pub struct StagingBackend {}
+pub struct StagingBackend {
+    #[cfg(feature = "manage")]
+    pub manage: manage::State,
+}
 
 impl StagingBackend {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            #[cfg(feature = "manage")]
+            manage: manage::State::default(),
+        }
     }
 }
 

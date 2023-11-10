@@ -8,8 +8,13 @@ use crate::wrap_key_to_file::WrapKeyToFileExtension;
 
 use crate::{StagingBackend, StagingContext};
 
+#[cfg(feature = "manage")]
+use crate::manage::ManageExtension;
 #[cfg(feature = "chunked")]
 use crate::streaming::ChunkedExtension;
+
+#[cfg(feature = "manage")]
+use trussed::types::{Location, Path};
 
 #[derive(Default, Debug)]
 pub struct Dispatcher {
@@ -27,6 +32,8 @@ pub enum ExtensionIds {
     WrapKeyToFile,
     #[cfg(feature = "chunked")]
     Chunked,
+    #[cfg(feature = "manage")]
+    Manage,
 }
 
 #[cfg(feature = "wrap-key-to-file")]
@@ -41,6 +48,12 @@ impl ExtensionId<ChunkedExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::Chunked;
 }
 
+#[cfg(feature = "manage")]
+impl ExtensionId<ManageExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::Manage;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
@@ -48,6 +61,8 @@ impl From<ExtensionIds> for u8 {
             ExtensionIds::WrapKeyToFile => 0,
             #[cfg(feature = "chunked")]
             ExtensionIds::Chunked => 1,
+            #[cfg(feature = "manage")]
+            ExtensionIds::Manage => 2,
         }
     }
 }
@@ -60,6 +75,8 @@ impl TryFrom<u8> for ExtensionIds {
             0 => Ok(Self::WrapKeyToFile),
             #[cfg(feature = "chunked")]
             1 => Ok(Self::Chunked),
+            #[cfg(feature = "manage")]
+            2 => Ok(Self::Manage),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -96,18 +113,8 @@ impl ExtensionDispatch for Dispatcher {
         // See https://github.com/rust-lang/rust/issues/78123#
         match *extension {
             #[cfg(feature = "wrap-key-to-file")]
-            ExtensionIds::WrapKeyToFile => <StagingBackend as ExtensionImpl<
-                WrapKeyToFileExtension,
-            >>::extension_request_serialized(
-                &mut self.backend,
-                &mut ctx.core,
-                &mut ctx.backends,
-                request,
-                resources,
-            ),
-            #[cfg(feature = "chunked")]
-            ExtensionIds::Chunked => {
-                <StagingBackend as ExtensionImpl<ChunkedExtension>>::extension_request_serialized(
+            ExtensionIds::WrapKeyToFile => {
+                ExtensionImpl::<WrapKeyToFileExtension>::extension_request_serialized(
                     &mut self.backend,
                     &mut ctx.core,
                     &mut ctx.backends,
@@ -115,6 +122,26 @@ impl ExtensionDispatch for Dispatcher {
                     resources,
                 )
             }
+
+            #[cfg(feature = "chunked")]
+            ExtensionIds::Chunked => {
+                ExtensionImpl::<ChunkedExtension>::extension_request_serialized(
+                    &mut self.backend,
+                    &mut ctx.core,
+                    &mut ctx.backends,
+                    request,
+                    resources,
+                )
+            }
+
+            #[cfg(feature = "manage")]
+            ExtensionIds::Manage => ExtensionImpl::<ManageExtension>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
         }
     }
 }
@@ -128,6 +155,7 @@ use trussed::{
 };
 
 pub type Client<S, D = Dispatcher> = virt::Client<S, D>;
+pub type MultiClient<S, D = Dispatcher> = virt::MultiClient<S, D>;
 
 pub fn with_client<S, R, F>(store: S, client_id: &str, f: F) -> R
 where
@@ -147,6 +175,62 @@ where
     })
 }
 
+#[cfg(feature = "manage")]
+pub fn with_client_and_preserve<S, R, F>(
+    store: S,
+    client_id: &str,
+    f: F,
+    should_preserve_file: fn(&Path, location: Location) -> bool,
+) -> R
+where
+    F: FnOnce(Client<S>) -> R,
+    S: StoreProvider,
+{
+    let mut dispatcher = Dispatcher::default();
+    dispatcher.backend.manage.should_preserve_file = should_preserve_file;
+
+    virt::with_platform(store, |platform| {
+        platform.run_client_with_backends(
+            client_id,
+            dispatcher,
+            &[
+                BackendId::Custom(BackendIds::StagingBackend),
+                BackendId::Core,
+            ],
+            f,
+        )
+    })
+}
+
+#[cfg(feature = "manage")]
+pub fn with_clients_and_preserve<S, R, F, const N: usize>(
+    store: S,
+    client_ids: [&str; N],
+    f: F,
+    should_preserve_file: fn(&Path, location: Location) -> bool,
+) -> R
+where
+    F: FnOnce([MultiClient<S>; N]) -> R,
+    S: StoreProvider,
+{
+    let mut dispatcher = Dispatcher::default();
+    dispatcher.backend.manage.should_preserve_file = should_preserve_file;
+    let clients_backend = client_ids.map(|id| {
+        (
+            id,
+            [
+                BackendId::Custom(BackendIds::StagingBackend),
+                BackendId::Core,
+            ]
+            .as_slice(),
+        )
+    });
+
+    virt::with_platform(store, |platform| {
+        platform.run_clients_with_backends(clients_backend, dispatcher, f)
+    })
+}
+
 pub fn with_fs_client<P, R, F>(internal: P, client_id: &str, f: F) -> R
 where
     F: FnOnce(Client<Filesystem>) -> R,
@@ -160,4 +244,26 @@ where
     F: FnOnce(Client<Ram>) -> R,
 {
     with_client(Ram::default(), client_id, f)
+}
+
+pub fn with_ram_client_and_preserve<R, F>(
+    client_id: &str,
+    should_preserve_file: fn(&Path, location: Location) -> bool,
+    f: F,
+) -> R
+where
+    F: FnOnce(Client<Ram>) -> R,
+{
+    with_client_and_preserve(Ram::default(), client_id, f, should_preserve_file)
+}
+
+pub fn with_ram_clients_and_preserve<R, F, const N: usize>(
+    client_ids: [&str; N],
+    should_preserve_file: fn(&Path, location: Location) -> bool,
+    f: F,
+) -> R
+where
+    F: FnOnce([MultiClient<Ram>; N]) -> R,
+{
+    with_clients_and_preserve(Ram::default(), client_ids, f, should_preserve_file)
 }
