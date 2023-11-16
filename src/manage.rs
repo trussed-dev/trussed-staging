@@ -29,7 +29,7 @@ pub struct FactoryResetDeviceRequest;
 /// This will reset all data for a specific client
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FactoryResetClientRequest {
-    client: PathBuf,
+    pub client: PathBuf,
 }
 
 #[allow(clippy::large_enum_variant)]
