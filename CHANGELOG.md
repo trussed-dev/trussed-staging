@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased][]
 
 - Add `ManageExtension`: Factory reset the entire device or the state of a given client ([#11][])
-- `ChunkedExtension`: Add `PartialReadFile` syscall.
+- `ChunkedExtension`: Add `AppendFile` and `PartialReadFile` syscalls.
 
 [#11]: https://github.com/trussed-dev/trussed-staging/pull/11
 

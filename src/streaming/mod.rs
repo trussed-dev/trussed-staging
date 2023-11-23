@@ -87,6 +87,7 @@ pub enum ChunkedRequest {
     WriteChunk(request::WriteChunk),
     AbortChunkedWrite(request::AbortChunkedWrite),
     PartialReadFile(request::PartialReadFile),
+    AppendFile(request::AppendFile),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -102,6 +103,7 @@ pub enum ChunkedReply {
     WriteChunk(reply::WriteChunk),
     AbortChunkedWrite(reply::AbortChunkedWrite),
     PartialReadFile(reply::PartialReadFile),
+    AppendFile(reply::AppendFile),
 }
 
 mod request {
@@ -292,6 +294,29 @@ mod request {
             Self::PartialReadFile(request)
         }
     }
+
+    #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+    pub struct AppendFile {
+        pub location: Location,
+        pub path: PathBuf,
+        pub data: Message,
+    }
+
+    impl TryFrom<ChunkedRequest> for AppendFile {
+        type Error = Error;
+        fn try_from(request: ChunkedRequest) -> Result<Self, Self::Error> {
+            match request {
+                ChunkedRequest::AppendFile(request) => Ok(request),
+                _ => Err(Error::InternalError),
+            }
+        }
+    }
+
+    impl From<AppendFile> for ChunkedRequest {
+        fn from(request: AppendFile) -> Self {
+            Self::AppendFile(request)
+        }
+    }
 }
 
 mod reply {
@@ -468,6 +493,27 @@ mod reply {
             Self::PartialReadFile(reply)
         }
     }
+
+    #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+    pub struct AppendFile {
+        pub file_length: usize,
+    }
+
+    impl TryFrom<ChunkedReply> for AppendFile {
+        type Error = Error;
+        fn try_from(reply: ChunkedReply) -> Result<Self, Self::Error> {
+            match reply {
+                ChunkedReply::AppendFile(reply) => Ok(reply),
+                _ => Err(Error::InternalError),
+            }
+        }
+    }
+
+    impl From<AppendFile> for ChunkedReply {
+        fn from(reply: AppendFile) -> Self {
+            Self::AppendFile(reply)
+        }
+    }
 }
 
 impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
@@ -561,6 +607,16 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     request.length,
                 )?;
                 Ok(reply::PartialReadFile { data, file_length }.into())
+            }
+            ChunkedRequest::AppendFile(request) => {
+                let file_length = store::append_file(
+                    store,
+                    client_id,
+                    &request.path,
+                    request.location,
+                    &request.data,
+                )?;
+                Ok(reply::AppendFile { file_length }.into())
             }
             #[cfg(feature = "encrypted-chunked")]
             ChunkedRequest::StartEncryptedChunkedWrite(request) => {
@@ -912,6 +968,20 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
             path,
             offset,
             length,
+        })
+    }
+
+    /// Append data to an existing file and return the size of the file after the write.
+    fn append_file(
+        &mut self,
+        location: Location,
+        path: PathBuf,
+        data: Message,
+    ) -> ChunkedResult<'_, reply::AppendFile, Self> {
+        self.extension(request::AppendFile {
+            location,
+            path,
+            data,
         })
     }
 }

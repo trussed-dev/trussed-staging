@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use littlefs2::driver::Storage as LfsStorage;
-use littlefs2::fs::{File, Filesystem};
+use littlefs2::fs::{File, Filesystem, OpenOptions};
 use littlefs2::io::{SeekFrom, Write};
 
-use trussed::config::MAX_MESSAGE_LENGTH;
 use trussed::store::{create_directories, Store};
 use trussed::types::{Bytes, Location, Message, Path, PathBuf};
 use trussed::Error;
@@ -34,9 +33,13 @@ pub fn fs_read_chunk<Storage: LfsStorage, const N: usize>(
     fs: &Filesystem<Storage>,
     path: &Path,
     pos: OpenSeekFrom,
+    length: usize,
 ) -> Result<(Bytes<N>, usize), Error> {
     let mut contents = Bytes::default();
-    contents.resize_default(contents.capacity()).unwrap();
+    if length > contents.capacity() {
+        return Err(Error::FilesystemReadFailure);
+    }
+    contents.resize_default(length).unwrap();
     let file_len = File::open_and_then(fs, path, |file| {
         file.seek(pos.into())?;
         let read_n = file.read(&mut contents)?;
@@ -46,6 +49,7 @@ pub fn fs_read_chunk<Storage: LfsStorage, const N: usize>(
     .map_err(|_| Error::FilesystemReadFailure)?;
     Ok((contents, file_len))
 }
+
 /// Reads contents from path in location of store.
 #[inline(never)]
 pub fn read_chunk<const N: usize>(
@@ -56,9 +60,9 @@ pub fn read_chunk<const N: usize>(
 ) -> Result<(Bytes<N>, usize), Error> {
     debug_now!("reading chunk {},{:?}", &path, pos);
     match location {
-        Location::Internal => fs_read_chunk(store.ifs(), path, pos),
-        Location::External => fs_read_chunk(store.efs(), path, pos),
-        Location::Volatile => fs_read_chunk(store.vfs(), path, pos),
+        Location::Internal => fs_read_chunk(store.ifs(), path, pos, N),
+        Location::External => fs_read_chunk(store.efs(), path, pos, N),
+        Location::Volatile => fs_read_chunk(store.vfs(), path, pos, N),
     }
 }
 
@@ -300,13 +304,42 @@ pub fn partial_read_file(
     offset: usize,
     length: usize,
 ) -> Result<(Message, usize), Error> {
-    if length > MAX_MESSAGE_LENGTH {
-        return Err(Error::FilesystemReadFailure);
-    }
     let path = actual_path(client_id, path)?;
     let offset = u32::try_from(offset).map_err(|_| Error::FilesystemReadFailure)?;
     let pos = OpenSeekFrom::Start(offset);
-    let (mut data, file_length) = read_chunk(store, location, &path, pos)?;
-    data.truncate(length);
-    Ok((data, file_length))
+    match location {
+        Location::Internal => fs_read_chunk(store.ifs(), &path, pos, length),
+        Location::External => fs_read_chunk(store.efs(), &path, pos, length),
+        Location::Volatile => fs_read_chunk(store.vfs(), &path, pos, length),
+    }
+}
+
+fn fs_append_file<Storage: LfsStorage>(
+    fs: &Filesystem<Storage>,
+    path: &Path,
+    data: &[u8],
+) -> Result<usize, Error> {
+    OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open_and_then(fs, path, |file| {
+            file.write_all(data)?;
+            file.len()
+        })
+        .map_err(|_| Error::FilesystemWriteFailure)
+}
+
+pub fn append_file(
+    store: impl Store,
+    client_id: &Path,
+    path: &PathBuf,
+    location: Location,
+    data: &[u8],
+) -> Result<usize, Error> {
+    let path = actual_path(client_id, path)?;
+    match location {
+        Location::Internal => fs_append_file(store.ifs(), &path, data),
+        Location::External => fs_append_file(store.efs(), &path, data),
+        Location::Volatile => fs_append_file(store.vfs(), &path, data),
+    }
 }
