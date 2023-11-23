@@ -4,6 +4,7 @@
 mod store;
 use store::OpenSeekFrom;
 
+#[cfg(feature = "encrypted-chunked")]
 pub mod utils;
 
 #[cfg(feature = "encrypted-chunked")]
@@ -85,6 +86,7 @@ pub enum ChunkedRequest {
     ReadChunk(request::ReadChunk),
     WriteChunk(request::WriteChunk),
     AbortChunkedWrite(request::AbortChunkedWrite),
+    PartialReadFile(request::PartialReadFile),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -99,6 +101,7 @@ pub enum ChunkedReply {
     StartEncryptedChunkedRead(reply::StartEncryptedChunkedRead),
     WriteChunk(reply::WriteChunk),
     AbortChunkedWrite(reply::AbortChunkedWrite),
+    PartialReadFile(reply::PartialReadFile),
 }
 
 mod request {
@@ -265,6 +268,30 @@ mod request {
             Self::AbortChunkedWrite(request)
         }
     }
+
+    #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+    pub struct PartialReadFile {
+        pub location: Location,
+        pub path: PathBuf,
+        pub offset: usize,
+        pub length: usize,
+    }
+
+    impl TryFrom<ChunkedRequest> for PartialReadFile {
+        type Error = Error;
+        fn try_from(request: ChunkedRequest) -> Result<Self, Self::Error> {
+            match request {
+                ChunkedRequest::PartialReadFile(request) => Ok(request),
+                _ => Err(Error::InternalError),
+            }
+        }
+    }
+
+    impl From<PartialReadFile> for ChunkedRequest {
+        fn from(request: PartialReadFile) -> Self {
+            Self::PartialReadFile(request)
+        }
+    }
 }
 
 mod reply {
@@ -419,6 +446,28 @@ mod reply {
             Self::AbortChunkedWrite(reply)
         }
     }
+
+    #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+    pub struct PartialReadFile {
+        pub data: Message,
+        pub file_length: usize,
+    }
+
+    impl TryFrom<ChunkedReply> for PartialReadFile {
+        type Error = Error;
+        fn try_from(reply: ChunkedReply) -> Result<Self, Self::Error> {
+            match reply {
+                ChunkedReply::PartialReadFile(reply) => Ok(reply),
+                _ => Err(Error::InternalError),
+            }
+        }
+    }
+
+    impl From<PartialReadFile> for ChunkedReply {
+        fn from(reply: PartialReadFile) -> Self {
+            Self::PartialReadFile(reply)
+        }
+    }
 }
 
 impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
@@ -501,6 +550,17 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 }));
                 store::start_chunked_write(store, client_id, &request.path, request.location, &[])?;
                 Ok(reply::StartChunkedWrite {}.into())
+            }
+            ChunkedRequest::PartialReadFile(request) => {
+                let (data, file_length) = store::partial_read_file(
+                    store,
+                    client_id,
+                    &request.path,
+                    request.location,
+                    request.offset,
+                    request.length,
+                )?;
+                Ok(reply::PartialReadFile { data, file_length }.into())
             }
             #[cfg(feature = "encrypted-chunked")]
             ChunkedRequest::StartEncryptedChunkedWrite(request) => {
@@ -833,6 +893,26 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     // Read part of a file, up to 1KiB starting at `pos`
     fn read_file_chunk(&mut self) -> ChunkedResult<'_, reply::ReadChunk, Self> {
         self.extension(request::ReadChunk {})
+    }
+
+    /// Partially read a file from a given offset, returning a chunk of the given length and the
+    /// total file size.
+    ///
+    /// If the length is greater than [`trussed::config::MAX_MESSAGE_LENGTH`][] or if the offset is
+    /// greater than the file size, an error is returned.
+    fn partial_read_file(
+        &mut self,
+        location: Location,
+        path: PathBuf,
+        offset: usize,
+        length: usize,
+    ) -> ChunkedResult<'_, reply::PartialReadFile, Self> {
+        self.extension(request::PartialReadFile {
+            location,
+            path,
+            offset,
+            length,
+        })
     }
 }
 

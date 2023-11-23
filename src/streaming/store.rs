@@ -5,8 +5,9 @@ use littlefs2::driver::Storage as LfsStorage;
 use littlefs2::fs::{File, Filesystem};
 use littlefs2::io::{SeekFrom, Write};
 
+use trussed::config::MAX_MESSAGE_LENGTH;
 use trussed::store::{create_directories, Store};
-use trussed::types::{Bytes, Location, Path, PathBuf};
+use trussed::types::{Bytes, Location, Message, Path, PathBuf};
 use trussed::Error;
 
 use serde::{Deserialize, Serialize};
@@ -289,4 +290,23 @@ pub fn flush_chunks(
         location,
         &client_path,
     )
+}
+
+pub fn partial_read_file(
+    store: impl Store,
+    client_id: &Path,
+    path: &PathBuf,
+    location: Location,
+    offset: usize,
+    length: usize,
+) -> Result<(Message, usize), Error> {
+    if length > MAX_MESSAGE_LENGTH {
+        return Err(Error::FilesystemReadFailure);
+    }
+    let path = actual_path(client_id, path)?;
+    let offset = u32::try_from(offset).map_err(|_| Error::FilesystemReadFailure)?;
+    let pos = OpenSeekFrom::Start(offset);
+    let (mut data, file_length) = read_chunk(store, location, &path, pos)?;
+    data.truncate(length);
+    Ok((data, file_length))
 }
