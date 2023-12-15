@@ -194,34 +194,19 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
             ManageRequest::FactoryResetDevice(FactoryResetDeviceRequest) => {
                 let platform = resources.platform();
                 let store = platform.store();
-                let ifs = store.ifs();
-                let efs = store.efs();
-                let vfs = store.vfs();
 
-                ifs.remove_dir_all_where(
-                    path!("/"),
-                    &callback(self.manage.should_preserve_file, Location::Internal),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete ifs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
-                efs.remove_dir_all_where(
-                    path!("/"),
-                    &callback(self.manage.should_preserve_file, Location::External),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete efs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
-                vfs.remove_dir_all_where(
-                    path!("/"),
-                    &callback(self.manage.should_preserve_file, Location::Volatile),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete vfs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
+                for location in [Location::Internal, Location::External, Location::Volatile] {
+                    store
+                        .fs(location)
+                        .remove_dir_all_where(
+                            path!("/"),
+                            &callback(self.manage.should_preserve_file, location),
+                        )
+                        .map_err(|_err| {
+                            debug!("Failed to delete {location:?} fs: {_err:?}");
+                            Error::FunctionFailed
+                        })?;
+                }
                 Ok(ManageReply::FactoryResetDevice(FactoryResetDeviceReply))
             }
             ManageRequest::FactoryResetClient(FactoryResetClientRequest { client }) => {
@@ -234,33 +219,18 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
 
                 let path = path!("/").join(client);
 
-                let ifs = store.ifs();
-                let efs = store.efs();
-                let vfs = store.vfs();
-                ifs.remove_dir_all_where(
-                    &path,
-                    &callback(self.manage.should_preserve_file, Location::Internal),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete ifs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
-                efs.remove_dir_all_where(
-                    &path,
-                    &callback(self.manage.should_preserve_file, Location::External),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete efs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
-                vfs.remove_dir_all_where(
-                    &path,
-                    &callback(self.manage.should_preserve_file, Location::Volatile),
-                )
-                .map_err(|_err| {
-                    debug!("Failed to delete vfs: {_err:?}");
-                    Error::FunctionFailed
-                })?;
+                for location in [Location::Internal, Location::External, Location::Volatile] {
+                    store
+                        .fs(location)
+                        .remove_dir_all_where(
+                            &path,
+                            &callback(self.manage.should_preserve_file, location),
+                        )
+                        .map_err(|_err| {
+                            debug!("Failed to delete {location:?} fs: {_err:?}");
+                            Error::FunctionFailed
+                        })?;
+                }
                 Ok(ManageReply::FactoryResetClient(FactoryResetClientReply))
             }
         }
