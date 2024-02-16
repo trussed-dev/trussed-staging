@@ -3,6 +3,7 @@
 
 use littlefs2::{
     fs::DirEntry,
+    object_safe::DynFilesystem,
     path,
     path::{Path, PathBuf},
 };
@@ -13,6 +14,17 @@ use trussed::{
     types::Location,
     Error,
 };
+
+#[derive(Debug)]
+pub struct Migrator {
+    /// The function performing the migration
+    ///
+    /// First argument is the Internal Filesystem, second argument is the External
+    pub migrate: fn(&dyn DynFilesystem, &dyn DynFilesystem) -> Result<(), littlefs2::io::Error>,
+
+    /// The version of the storage for which the migration needs to be run
+    pub version: u32,
+}
 
 use crate::StagingBackend;
 
@@ -32,11 +44,21 @@ pub struct FactoryResetClientRequest {
     pub client: PathBuf,
 }
 
+/// Request a migration of the filesystem
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
+pub struct MigrateRequest {
+    /// Run migrators where [`version`](Migrator::version) is larger than `from_version`
+    pub from_version: u32,
+    /// Run migrators where [`version`](Migrator::version) is lower or equal to `to_version`
+    pub to_version: u32,
+}
+
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ManageRequest {
     FactoryResetDevice(FactoryResetDeviceRequest),
     FactoryResetClient(FactoryResetClientRequest),
+    Migrate(MigrateRequest),
 }
 
 impl From<FactoryResetClientRequest> for ManageRequest {
@@ -71,6 +93,22 @@ impl TryFrom<ManageRequest> for FactoryResetDeviceRequest {
     }
 }
 
+impl From<MigrateRequest> for ManageRequest {
+    fn from(value: MigrateRequest) -> Self {
+        Self::Migrate(value)
+    }
+}
+
+impl TryFrom<ManageRequest> for MigrateRequest {
+    type Error = Error;
+    fn try_from(value: ManageRequest) -> Result<Self, Self::Error> {
+        match value {
+            ManageRequest::Migrate(v) => Ok(v),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
 /// Factory reset the entire device
 ///
 /// This will reset all filesystems
@@ -83,10 +121,15 @@ pub struct FactoryResetDeviceReply;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FactoryResetClientReply;
 
+/// Request a migration of the filesystem
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
+pub struct MigrateReply;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ManageReply {
     FactoryResetDevice(FactoryResetDeviceReply),
     FactoryResetClient(FactoryResetClientReply),
+    Migrate(MigrateReply),
 }
 
 impl From<FactoryResetClientReply> for ManageReply {
@@ -121,6 +164,22 @@ impl TryFrom<ManageReply> for FactoryResetDeviceReply {
     }
 }
 
+impl From<MigrateReply> for ManageReply {
+    fn from(value: MigrateReply) -> Self {
+        Self::Migrate(value)
+    }
+}
+
+impl TryFrom<ManageReply> for MigrateReply {
+    type Error = Error;
+    fn try_from(value: ManageReply) -> Result<Self, Self::Error> {
+        match value {
+            ManageReply::Migrate(v) => Ok(v),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
 impl Extension for ManageExtension {
     type Request = ManageRequest;
     type Reply = ManageReply;
@@ -146,6 +205,20 @@ pub trait ManageClient: ExtensionClient<ManageExtension> {
             client: client.into(),
         })
     }
+
+    /// Perform the migrations configured in [`State::migrators`]
+    ///
+    /// Run the migrators where [`version`](Migrator::version) is larger than `from_version` and lower than `to_version`
+    fn migrate(
+        &mut self,
+        from_version: u32,
+        to_version: u32,
+    ) -> ManageResult<'_, MigrateReply, Self> {
+        self.extension(MigrateRequest {
+            from_version,
+            to_version,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -163,12 +236,15 @@ pub struct State {
     /// }
     /// ```
     pub should_preserve_file: fn(&Path, location: Location) -> bool,
+
+    pub migrators: &'static [Migrator],
 }
 
 impl Default for State {
     fn default() -> State {
         State {
             should_preserve_file: |_, _| false,
+            migrators: &[],
         }
     }
 }
@@ -232,6 +308,24 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                         })?;
                 }
                 Ok(ManageReply::FactoryResetClient(FactoryResetClientReply))
+            }
+            ManageRequest::Migrate(MigrateRequest {
+                from_version,
+                to_version,
+            }) => {
+                let platform = resources.platform();
+                let store = platform.store();
+                let internal = store.ifs();
+                let external = store.efs();
+                for migration in self.manage.migrators {
+                    if migration.version > *from_version && migration.version <= *to_version {
+                        (migration.migrate)(&**internal, &**external).map_err(|_err| {
+                            error_now!("Migration failed: {_err:?}");
+                            Error::FilesystemWriteFailure
+                        })?;
+                    }
+                }
+                Ok(ManageReply::Migrate(MigrateReply))
             }
         }
     }
