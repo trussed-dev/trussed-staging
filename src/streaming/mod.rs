@@ -660,9 +660,8 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 )?;
                 let nonce: Bytes<CHACHA8_STREAM_NONCE_LEN> =
                     filestore.read(&request.path, request.location)?;
-                let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> = (&**nonce)
-                    .try_into()
-                    .map_err(|_| Error::WrongMessageLength)?;
+                let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
+                    (&**nonce).into();
                 let aead = ChaCha8Poly1305::new((&*key.material).into());
                 let decryptor = DecryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 backend_ctx.chunked_io_state =
