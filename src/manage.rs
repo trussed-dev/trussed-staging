@@ -15,6 +15,9 @@ use trussed::{
     Error,
 };
 
+#[cfg(feature = "migration-tests")]
+pub mod test_utils;
+
 #[derive(Debug)]
 pub struct Migrator {
     /// The function performing the migration
