@@ -7,7 +7,8 @@ use littlefs2::path;
 use trussed::client::FilesystemClient;
 use trussed::syscall;
 use trussed::types::{Bytes, Location, Path};
-use trussed_staging::{manage::ManageClient, virt::with_ram_clients_and_preserve};
+use trussed_manage::ManageClient;
+use trussed_staging::virt::with_ram_clients_and_preserve;
 
 fn should_preserve(path: &Path, location: Location) -> bool {
     (location == Location::Internal && path == path!("/client1/dat/to_save_internal"))

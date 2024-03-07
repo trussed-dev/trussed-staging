@@ -1,16 +1,14 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use littlefs2::path::PathBuf;
 use serde_byte_array::ByteArray;
-
 use trussed::{
     syscall, try_syscall,
-    types::{KeyId, Location, Message, UserAttribute},
+    types::{KeyId, Location, Message, PathBuf, UserAttribute},
     Error,
 };
 
-use super::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
+use crate::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
 
 #[derive(Clone, Copy)]
 pub struct EncryptionData {

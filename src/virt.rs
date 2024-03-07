@@ -3,18 +3,17 @@
 
 //! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`StagingBackend`] backend.
 
-#[cfg(feature = "wrap-key-to-file")]
-use crate::wrap_key_to_file::WrapKeyToFileExtension;
-
-use crate::{StagingBackend, StagingContext};
-
-#[cfg(feature = "manage")]
-use crate::manage::ManageExtension;
-#[cfg(feature = "chunked")]
-use crate::streaming::ChunkedExtension;
-
 #[cfg(feature = "manage")]
 use trussed::types::{Location, Path};
+
+#[cfg(feature = "chunked")]
+use trussed_chunked::ChunkedExtension;
+#[cfg(feature = "manage")]
+use trussed_manage::ManageExtension;
+#[cfg(feature = "wrap-key-to-file")]
+use trussed_wrap_key_to_file::WrapKeyToFileExtension;
+
+use crate::{StagingBackend, StagingContext};
 
 #[derive(Default, Debug)]
 pub struct Dispatcher {

@@ -5,10 +5,9 @@
 
 use littlefs2::path::PathBuf;
 use trussed::{client::FilesystemClient, syscall, try_syscall, types::Location, Bytes};
-use trussed_staging::{
-    streaming::{utils, ChunkedClient},
-    virt::with_ram_client,
-};
+use trussed_chunked::{utils, ChunkedClient};
+use trussed_staging::virt::with_ram_client;
+
 fn test_write_all(location: Location) {
     with_ram_client("test chunked", |mut client| {
         let path = PathBuf::from("foo");

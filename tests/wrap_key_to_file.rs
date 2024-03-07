@@ -12,7 +12,7 @@ use trussed::types::{
 
 use trussed_staging::virt::with_ram_client;
 
-use trussed_staging::wrap_key_to_file::WrapKeyToFileClient;
+use trussed_wrap_key_to_file::WrapKeyToFileClient;
 
 fn assert_key_eq(key1: KeyId, key2: KeyId, client: &mut impl trussed::Client) {
     let derivative1 = syscall!(client.sign(

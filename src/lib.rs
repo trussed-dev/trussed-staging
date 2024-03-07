@@ -13,26 +13,28 @@ use trussed::backend::Backend;
 pub mod virt;
 
 #[cfg(feature = "wrap-key-to-file")]
-pub mod wrap_key_to_file;
+mod wrap_key_to_file;
 
 #[cfg(feature = "chunked")]
-pub mod streaming;
+mod chunked;
 
 #[cfg(feature = "manage")]
-pub mod manage;
+mod manage;
+#[cfg(feature = "manage")]
+pub use manage::State as ManageState;
 
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct StagingBackend {
     #[cfg(feature = "manage")]
-    pub manage: manage::State,
+    pub manage: ManageState,
 }
 
 impl StagingBackend {
     pub fn new() -> Self {
         Self {
             #[cfg(feature = "manage")]
-            manage: manage::State::default(),
+            manage: Default::default(),
         }
     }
 }
@@ -41,7 +43,7 @@ impl StagingBackend {
 #[non_exhaustive]
 pub struct StagingContext {
     #[cfg(feature = "chunked")]
-    chunked_io_state: Option<streaming::ChunkedIoState>,
+    chunked_io_state: Option<chunked::ChunkedIoState>,
 }
 
 impl Backend for StagingBackend {

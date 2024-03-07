@@ -1,34 +1,53 @@
 # Copyright (C) Nitrokey GmbH
 # SPDX-License-Identifier: CC0-1.0
 
-[package]
-name = "trussed-staging"
-version = "0.1.0"
+[workspace]
+members = ["extensions/chunked", "extensions/manage", "extensions/wrap-key-to-file"]
+
+[workspace.package]
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 edition = "2021"
 repository = "https://github.com/trussed-dev/trussed-staging"
 license = "Apache-2.0 OR MIT"
+
+[workspace.dependencies]
+serde = { version = "1.0.160", default-features = false, features = ["derive"] }
+serde-byte-array = "0.1.2"
+trussed = { version = "0.1.0", features = ["serde-extensions"] }
+
+[package]
+name = "trussed-staging"
+version = "0.1.0"
 description = "Work in progress trussed features"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
-trussed = { version = "0.1.0", features = ["serde-extensions"] }
+serde.workspace = true
+serde-byte-array.workspace = true
+trussed.workspace = true
+
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["heapless", "reduced-round"], optional = true }
-serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 rand_core = { version = "0.6.4", default-features = false }
 delog = "0.1.6"
 littlefs2 = "0.4.0"
-serde-byte-array = "0.1.2"
+
+trussed-chunked = { version = "0.1.0", optional = true }
+trussed-manage = { version = "0.1.0", optional = true }
+trussed-wrap-key-to-file = { version = "0.1.0", optional = true }
 
 [dev-dependencies]
-trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions", "virt"] }
+trussed = { workspace = true, features = ["virt"] }
 
 [features]
 default = ["manage"]
 
-wrap-key-to-file = ["chacha20poly1305"]
-chunked = []
-encrypted-chunked = ["chunked", "chacha20poly1305/stream"]
-manage = []
+wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
+chunked = ["trussed-chunked"]
+encrypted-chunked = ["chunked", "chacha20poly1305/stream", "trussed-chunked/encrypted-chunked"]
+manage = ["trussed-manage"]
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -44,3 +63,7 @@ log-error = []
 [patch.crates-io]
 trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "45ed62ba97d994aa6e05e2b61cea013ef131caa4" }
 littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "ebd27e49ca321089d01d8c9b169c4aeb58ceeeca" }
+
+trussed-chunked = { path = "extensions/chunked" }
+trussed-manage = { path = "extensions/manage" }
+trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }

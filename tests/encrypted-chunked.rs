@@ -9,13 +9,11 @@ use trussed::{
     client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location, Bytes,
     Error,
 };
-use trussed_staging::{
-    streaming::{
-        utils::{self, EncryptionData},
-        ChunkedClient,
-    },
-    virt::with_ram_client,
+use trussed_chunked::{
+    utils::{self, EncryptionData},
+    ChunkedClient,
 };
+use trussed_staging::virt::with_ram_client;
 
 fn test_write_all(location: Location) {
     with_ram_client("test chunked", |mut client| {
