@@ -246,6 +246,7 @@ where
     with_client(Ram::default(), client_id, f)
 }
 
+#[cfg(feature = "manage")]
 pub fn with_ram_client_and_preserve<R, F>(
     client_id: &str,
     should_preserve_file: fn(&Path, location: Location) -> bool,
@@ -257,6 +258,7 @@ where
     with_client_and_preserve(Ram::default(), client_id, f, should_preserve_file)
 }
 
+#[cfg(feature = "manage")]
 pub fn with_ram_clients_and_preserve<R, F, const N: usize>(
     client_ids: [&str; N],
     should_preserve_file: fn(&Path, location: Location) -> bool,
