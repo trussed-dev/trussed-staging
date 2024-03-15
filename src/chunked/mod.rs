@@ -4,7 +4,6 @@
 mod store;
 use store::OpenSeekFrom;
 
-#[cfg(feature = "encrypted-chunked")]
 use chacha20poly1305::{
     aead::stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31},
     ChaCha8Poly1305, KeyInit,
@@ -41,7 +40,6 @@ pub struct ChunkedWriteState {
     pub location: Location,
 }
 
-#[cfg(feature = "encrypted-chunked")]
 pub struct EncryptedChunkedReadState {
     pub path: PathBuf,
     pub location: Location,
@@ -49,7 +47,6 @@ pub struct EncryptedChunkedReadState {
     pub decryptor: DecryptorLE31<ChaCha8Poly1305>,
 }
 
-#[cfg(feature = "encrypted-chunked")]
 pub struct EncryptedChunkedWriteState {
     pub path: PathBuf,
     pub location: Location,
@@ -60,9 +57,7 @@ pub struct EncryptedChunkedWriteState {
 pub enum ChunkedIoState {
     Read(ChunkedReadState),
     Write(ChunkedWriteState),
-    #[cfg(feature = "encrypted-chunked")]
     EncryptedRead(EncryptedChunkedReadState),
-    #[cfg(feature = "encrypted-chunked")]
     EncryptedWrite(EncryptedChunkedWriteState),
 }
 
@@ -83,7 +78,6 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
             ChunkedRequest::ReadChunk(_) => {
                 let read_state = match &mut backend_ctx.chunked_io_state {
                     Some(ChunkedIoState::Read(read_state)) => read_state,
-                    #[cfg(feature = "encrypted-chunked")]
                     Some(ChunkedIoState::EncryptedRead(_)) => {
                         return read_encrypted_chunk(store, client_id, backend_ctx)
                     }
@@ -168,7 +162,6 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 )?;
                 Ok(reply::AppendFile { file_length }.into())
             }
-            #[cfg(feature = "encrypted-chunked")]
             ChunkedRequest::StartEncryptedChunkedWrite(request) => {
                 clear_chunked_state(store, client_id, backend_ctx)?;
                 let key = keystore.load_key(
@@ -200,7 +193,6 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     }));
                 Ok(reply::StartEncryptedChunkedWrite {}.into())
             }
-            #[cfg(feature = "encrypted-chunked")]
             ChunkedRequest::StartEncryptedChunkedRead(request) => {
                 clear_chunked_state(store, client_id, backend_ctx)?;
                 let key = keystore.load_key(
@@ -238,9 +230,7 @@ fn clear_chunked_state(
             info!("Automatically cancelling write");
             store::abort_chunked_write(store, client_id, &write_state.path, write_state.location);
         }
-        #[cfg(feature = "encrypted-chunked")]
         Some(ChunkedIoState::EncryptedRead(_)) => {}
-        #[cfg(feature = "encrypted-chunked")]
         Some(ChunkedIoState::EncryptedWrite(write_state)) => {
             info!("Automatically cancelling encrypted write");
             store::abort_chunked_write(store, client_id, &write_state.path, write_state.location);
@@ -265,7 +255,6 @@ fn write_chunk(
                 data,
             )?;
         }
-        #[cfg(feature = "encrypted-chunked")]
         Some(ChunkedIoState::EncryptedWrite(ref mut write_state)) => {
             let mut data =
                 Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::from_slice(data).unwrap();
@@ -306,7 +295,6 @@ fn write_last_chunk(
             )?;
             store::flush_chunks(store, client_id, &write_state.path, write_state.location)?;
         }
-        #[cfg(feature = "encrypted-chunked")]
         Some(ChunkedIoState::EncryptedWrite(write_state)) => {
             let mut data =
                 Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::from_slice(data).unwrap();
@@ -332,7 +320,6 @@ fn write_last_chunk(
     Ok(())
 }
 
-#[cfg(feature = "encrypted-chunked")]
 fn read_encrypted_chunk(
     store: impl Store,
     client_id: &Path,

@@ -5,7 +5,7 @@
 check:
 	RUSTLFAGS='-Dwarnings' cargo check --all-features --all-targets --workspace
 	RUSTLFAGS='-Dwarnings' cargo check --no-default-features
-	RUSTLFAGS='-Dwarnings' cargo check --features encrypted-chunked
+	RUSTLFAGS='-Dwarnings' cargo check --features chunked
 	RUSTLFAGS='-Dwarnings' cargo check --features manage
 	RUSTLFAGS='-Dwarnings' cargo check --features wrap-key-to-file
 

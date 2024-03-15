@@ -45,8 +45,7 @@ trussed = { workspace = true, features = ["virt"] }
 default = ["manage"]
 
 wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
-chunked = ["trussed-chunked"]
-encrypted-chunked = ["chunked", "chacha20poly1305/stream", "trussed-chunked/encrypted-chunked"]
+chunked = ["trussed-chunked", "chacha20poly1305/stream"]
 manage = ["trussed-manage"]
 
 virt = ["std", "trussed/virt"]

@@ -5,7 +5,6 @@
 #![warn(non_ascii_idents, trivial_casts, unused, unused_qualifications)]
 #![deny(unsafe_code)]
 
-#[cfg(feature = "encrypted-chunked")]
 pub mod utils;
 
 use serde::{Deserialize, Serialize};
@@ -30,10 +29,8 @@ impl Extension for ChunkedExtension {
 #[allow(missing_docs, clippy::large_enum_variant)]
 pub enum ChunkedRequest {
     StartChunkedWrite(request::StartChunkedWrite),
-    #[cfg(feature = "encrypted-chunked")]
     StartEncryptedChunkedWrite(request::StartEncryptedChunkedWrite),
     StartChunkedRead(request::StartChunkedRead),
-    #[cfg(feature = "encrypted-chunked")]
     StartEncryptedChunkedRead(request::StartEncryptedChunkedRead),
     ReadChunk(request::ReadChunk),
     WriteChunk(request::WriteChunk),
@@ -47,10 +44,8 @@ pub enum ChunkedRequest {
 pub enum ChunkedReply {
     ReadChunk(reply::ReadChunk),
     StartChunkedWrite(reply::StartChunkedWrite),
-    #[cfg(feature = "encrypted-chunked")]
     StartEncryptedChunkedWrite(reply::StartEncryptedChunkedWrite),
     StartChunkedRead(reply::StartChunkedRead),
-    #[cfg(feature = "encrypted-chunked")]
     StartEncryptedChunkedRead(reply::StartEncryptedChunkedRead),
     WriteChunk(reply::WriteChunk),
     AbortChunkedWrite(reply::AbortChunkedWrite),
@@ -107,7 +102,6 @@ pub mod request {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct StartEncryptedChunkedWrite {
         pub location: Location,
@@ -117,7 +111,6 @@ pub mod request {
         pub nonce: Option<ByteArray<CHACHA8_STREAM_NONCE_LEN>>,
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl TryFrom<ChunkedRequest> for StartEncryptedChunkedWrite {
         type Error = Error;
         fn try_from(request: ChunkedRequest) -> Result<Self, Self::Error> {
@@ -128,7 +121,6 @@ pub mod request {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl From<StartEncryptedChunkedWrite> for ChunkedRequest {
         fn from(request: StartEncryptedChunkedWrite) -> Self {
             Self::StartEncryptedChunkedWrite(request)
@@ -157,7 +149,6 @@ pub mod request {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct StartEncryptedChunkedRead {
         pub location: Location,
@@ -165,7 +156,6 @@ pub mod request {
         pub key: KeyId,
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl TryFrom<ChunkedRequest> for StartEncryptedChunkedRead {
         type Error = Error;
         fn try_from(request: ChunkedRequest) -> Result<Self, Self::Error> {
@@ -176,7 +166,6 @@ pub mod request {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl From<StartEncryptedChunkedRead> for ChunkedRequest {
         fn from(request: StartEncryptedChunkedRead) -> Self {
             Self::StartEncryptedChunkedRead(request)
@@ -318,11 +307,9 @@ pub mod reply {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct StartEncryptedChunkedWrite {}
 
-    #[cfg(feature = "encrypted-chunked")]
     impl TryFrom<ChunkedReply> for StartEncryptedChunkedWrite {
         type Error = Error;
         fn try_from(reply: ChunkedReply) -> Result<Self, Self::Error> {
@@ -333,7 +320,6 @@ pub mod reply {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl From<StartEncryptedChunkedWrite> for ChunkedReply {
         fn from(reply: StartEncryptedChunkedWrite) -> Self {
             Self::StartEncryptedChunkedWrite(reply)
@@ -362,11 +348,9 @@ pub mod reply {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct StartEncryptedChunkedRead {}
 
-    #[cfg(feature = "encrypted-chunked")]
     impl TryFrom<ChunkedReply> for StartEncryptedChunkedRead {
         type Error = Error;
         fn try_from(reply: ChunkedReply) -> Result<Self, Self::Error> {
@@ -377,7 +361,6 @@ pub mod reply {
         }
     }
 
-    #[cfg(feature = "encrypted-chunked")]
     impl From<StartEncryptedChunkedRead> for ChunkedReply {
         fn from(reply: StartEncryptedChunkedRead) -> Self {
             Self::StartEncryptedChunkedRead(reply)
@@ -492,7 +475,6 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     ///
     /// More chunks can be written with [`write_file_chunk`](ChunkedClient::write_file_chunk).
     /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`] is transfered.
-    #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_write(
         &mut self,
         location: Location,
@@ -527,7 +509,6 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
     /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
     /// Only once the entire file has been read does the data have been properly authenticated.
-    #[cfg(feature = "encrypted-chunked")]
     fn start_encrypted_chunked_read(
         &mut self,
         location: Location,

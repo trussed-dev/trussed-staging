@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-#![cfg(all(feature = "virt", feature = "encrypted-chunked"))]
+#![cfg(all(feature = "virt", feature = "chunked"))]
 
 use littlefs2::path::PathBuf;
 use serde_byte_array::ByteArray;
