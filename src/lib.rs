@@ -18,6 +18,9 @@ mod wrap_key_to_file;
 #[cfg(feature = "chunked")]
 mod chunked;
 
+#[cfg(feature = "hkdf")]
+mod hkdf;
+
 #[cfg(feature = "manage")]
 mod manage;
 #[cfg(feature = "manage")]

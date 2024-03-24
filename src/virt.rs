@@ -8,6 +8,8 @@ use trussed::types::{Location, Path};
 
 #[cfg(feature = "chunked")]
 use trussed_chunked::ChunkedExtension;
+#[cfg(feature = "hkdf")]
+use trussed_hkdf::HkdfExtension;
 #[cfg(feature = "manage")]
 use trussed_manage::ManageExtension;
 #[cfg(feature = "wrap-key-to-file")]
@@ -27,18 +29,14 @@ pub enum BackendIds {
 
 #[derive(Debug)]
 pub enum ExtensionIds {
-    #[cfg(feature = "wrap-key-to-file")]
-    WrapKeyToFile,
     #[cfg(feature = "chunked")]
     Chunked,
+    #[cfg(feature = "hkdf")]
+    Hkdf,
     #[cfg(feature = "manage")]
     Manage,
-}
-
-#[cfg(feature = "wrap-key-to-file")]
-impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
-    type Id = ExtensionIds;
-    const ID: ExtensionIds = ExtensionIds::WrapKeyToFile;
+    #[cfg(feature = "wrap-key-to-file")]
+    WrapKeyToFile,
 }
 
 #[cfg(feature = "chunked")]
@@ -47,21 +45,35 @@ impl ExtensionId<ChunkedExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::Chunked;
 }
 
+#[cfg(feature = "hkdf")]
+impl ExtensionId<HkdfExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::Hkdf;
+}
+
 #[cfg(feature = "manage")]
 impl ExtensionId<ManageExtension> for Dispatcher {
     type Id = ExtensionIds;
     const ID: ExtensionIds = ExtensionIds::Manage;
 }
 
+#[cfg(feature = "wrap-key-to-file")]
+impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::WrapKeyToFile;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
-            #[cfg(feature = "wrap-key-to-file")]
-            ExtensionIds::WrapKeyToFile => 0,
             #[cfg(feature = "chunked")]
-            ExtensionIds::Chunked => 1,
+            ExtensionIds::Chunked => 0,
+            #[cfg(feature = "hkdf")]
+            ExtensionIds::Hkdf => 1,
             #[cfg(feature = "manage")]
             ExtensionIds::Manage => 2,
+            #[cfg(feature = "wrap-key-to-file")]
+            ExtensionIds::WrapKeyToFile => 3,
         }
     }
 }
@@ -70,12 +82,14 @@ impl TryFrom<u8> for ExtensionIds {
     type Error = Error;
     fn try_from(value: u8) -> Result<Self, Error> {
         match value {
-            #[cfg(feature = "wrap-key-to-file")]
-            0 => Ok(Self::WrapKeyToFile),
             #[cfg(feature = "chunked")]
-            1 => Ok(Self::Chunked),
+            0 => Ok(Self::Chunked),
+            #[cfg(feature = "hkdf")]
+            1 => Ok(Self::Hkdf),
             #[cfg(feature = "manage")]
             2 => Ok(Self::Manage),
+            #[cfg(feature = "wrap-key-to-file")]
+            3 => Ok(Self::WrapKeyToFile),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -132,6 +146,15 @@ impl ExtensionDispatch for Dispatcher {
                     resources,
                 )
             }
+
+            #[cfg(feature = "chunked")]
+            ExtensionIds::Hkdf => ExtensionImpl::<HkdfExtension>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
 
             #[cfg(feature = "manage")]
             ExtensionIds::Manage => ExtensionImpl::<ManageExtension>::extension_request_serialized(

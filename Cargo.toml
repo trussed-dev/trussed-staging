@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [workspace]
-members = ["extensions/chunked", "extensions/manage", "extensions/wrap-key-to-file"]
+members = ["extensions/chunked", "extensions/hkdf", "extensions/manage", "extensions/wrap-key-to-file"]
 
 [workspace.package]
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
@@ -17,7 +17,7 @@ trussed = { version = "0.1.0", features = ["serde-extensions"] }
 
 [package]
 name = "trussed-staging"
-version = "0.2.0"
+version = "0.3.0"
 description = "Work in progress trussed features"
 authors.workspace = true
 edition.workspace = true
@@ -30,23 +30,29 @@ serde-byte-array.workspace = true
 trussed.workspace = true
 
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["heapless", "reduced-round"], optional = true }
-rand_core = { version = "0.6.4", default-features = false }
 delog = "0.1.6"
+hkdf = { version = "0.12", optional = true }
+rand_core = { version = "0.6.4", default-features = false }
+sha2 = { version = "0.10", default-features = false, optional = true }
 littlefs2 = "0.4.0"
 
 trussed-chunked = { version = "0.1.0", optional = true }
+trussed-hkdf = { version = "0.2.0", optional = true }
 trussed-manage = { version = "0.1.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.1.0", optional = true }
 
 [dev-dependencies]
+hex-literal = "0.3.4"
+hmac = "0.12.0"
 trussed = { workspace = true, features = ["virt"] }
 
 [features]
 default = []
 
-wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
 chunked = ["trussed-chunked", "chacha20poly1305/stream"]
+hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
 manage = ["trussed-manage"]
+wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -64,5 +70,6 @@ trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "45ed62ba9
 littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "ebd27e49ca321089d01d8c9b169c4aeb58ceeeca" }
 
 trussed-chunked = { path = "extensions/chunked" }
+trussed-hkdf = { path = "extensions/hkdf" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
