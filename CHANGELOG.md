@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
--
+- Remove `manage` from default features.
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.2.0...HEAD
 
