@@ -12,13 +12,17 @@ use serde::{Deserialize, Serialize};
 use serde_byte_array::ByteArray;
 
 use trussed::serde_extensions::{Extension, ExtensionClient, ExtensionResult};
-use trussed::types::{KeyId, Location, Message, ShortData};
+use trussed::types::{KeyId, Location, Message, PathBuf, ShortData};
 use trussed::Error;
 
 #[derive(Deserialize, Serialize)]
 pub enum HpkeRequest {
     Seal(HpkeSealRequest),
+    SealKey(HpkeSealKeyRequest),
+    SealKeyToFile(HpkeSealKeyToFileRequest),
     Open(HpkeOpenRequest),
+    OpenKey(HpkeOpenKeyRequest),
+    OpenKeyFromFile(HpkeOpenKeyFromFileRequest),
 }
 
 impl From<HpkeSealRequest> for HpkeRequest {
@@ -26,9 +30,29 @@ impl From<HpkeSealRequest> for HpkeRequest {
         Self::Seal(value)
     }
 }
+impl From<HpkeSealKeyRequest> for HpkeRequest {
+    fn from(value: HpkeSealKeyRequest) -> Self {
+        Self::SealKey(value)
+    }
+}
+impl From<HpkeSealKeyToFileRequest> for HpkeRequest {
+    fn from(value: HpkeSealKeyToFileRequest) -> Self {
+        Self::SealKeyToFile(value)
+    }
+}
 impl From<HpkeOpenRequest> for HpkeRequest {
     fn from(value: HpkeOpenRequest) -> Self {
         Self::Open(value)
+    }
+}
+impl From<HpkeOpenKeyRequest> for HpkeRequest {
+    fn from(value: HpkeOpenKeyRequest) -> Self {
+        Self::OpenKey(value)
+    }
+}
+impl From<HpkeOpenKeyFromFileRequest> for HpkeRequest {
+    fn from(value: HpkeOpenKeyFromFileRequest) -> Self {
+        Self::OpenKeyFromFile(value)
     }
 }
 impl TryFrom<HpkeRequest> for HpkeSealRequest {
@@ -41,11 +65,51 @@ impl TryFrom<HpkeRequest> for HpkeSealRequest {
     }
 }
 
+impl TryFrom<HpkeRequest> for HpkeSealKeyRequest {
+    type Error = Error;
+    fn try_from(value: HpkeRequest) -> Result<Self, Self::Error> {
+        match value {
+            HpkeRequest::SealKey(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeRequest> for HpkeSealKeyToFileRequest {
+    type Error = Error;
+    fn try_from(value: HpkeRequest) -> Result<Self, Self::Error> {
+        match value {
+            HpkeRequest::SealKeyToFile(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
 impl TryFrom<HpkeRequest> for HpkeOpenRequest {
     type Error = Error;
     fn try_from(value: HpkeRequest) -> Result<Self, Self::Error> {
         match value {
             HpkeRequest::Open(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeRequest> for HpkeOpenKeyRequest {
+    type Error = Error;
+    fn try_from(value: HpkeRequest) -> Result<Self, Self::Error> {
+        match value {
+            HpkeRequest::OpenKey(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeRequest> for HpkeOpenKeyFromFileRequest {
+    type Error = Error;
+    fn try_from(value: HpkeRequest) -> Result<Self, Self::Error> {
+        match value {
+            HpkeRequest::OpenKeyFromFile(this) => Ok(this),
             _ => Err(Error::InternalError),
         }
     }
@@ -64,6 +128,30 @@ pub struct HpkeSealRequest {
     pub enc_location: Location,
 }
 
+/// Seal to a public key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeSealKeyRequest {
+    pub public_key: KeyId,
+    pub key_to_seal: KeyId,
+    pub aad: ShortData,
+    pub info: ShortData,
+}
+
+/// Seal to a public key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeSealKeyToFileRequest {
+    pub public_key: KeyId,
+    pub key_to_seal: KeyId,
+    pub aad: ShortData,
+    pub info: ShortData,
+    pub file: PathBuf,
+    pub location: Location,
+}
+
 /// Open with a private key
 ///
 /// As described in 6.1 with mode "base"
@@ -77,10 +165,58 @@ pub struct HpkeOpenRequest {
     pub info: ShortData,
 }
 
+/// Open with a private key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeOpenKeyRequest {
+    pub key: KeyId,
+    pub sealed_key: Message,
+    pub aad: ShortData,
+    pub info: ShortData,
+    pub location: Location,
+}
+
+/// Open with a private key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeOpenKeyFromFileRequest {
+    pub key: KeyId,
+    pub sealed_key: PathBuf,
+    pub sealed_location: Location,
+    pub unsealed_location: Location,
+    pub aad: ShortData,
+    pub info: ShortData,
+}
+
+/// Seal to a public key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeSealReply {
+    pub enc: KeyId,
+    pub ciphertext: Message,
+    pub tag: ByteArray<16>,
+}
+/// Seal a key to a public key
+#[derive(Deserialize, Serialize)]
+pub struct HpkeSealKeyReply {
+    pub data: Message,
+}
+
+/// Seal a key to a public key
+#[derive(Deserialize, Serialize)]
+pub struct HpkeSealKeyToFileReply {}
+
 #[derive(Deserialize, Serialize)]
 pub enum HpkeReply {
     Seal(HpkeSealReply),
+    SealKey(HpkeSealKeyReply),
+    SealKeyToFile(HpkeSealKeyToFileReply),
     Open(HpkeOpenReply),
+    OpenKey(HpkeOpenKeyReply),
+    OpenKeyFromFile(HpkeOpenKeyFromFileReply),
 }
 
 impl From<HpkeSealReply> for HpkeReply {
@@ -88,9 +224,29 @@ impl From<HpkeSealReply> for HpkeReply {
         Self::Seal(value)
     }
 }
+impl From<HpkeSealKeyReply> for HpkeReply {
+    fn from(value: HpkeSealKeyReply) -> Self {
+        Self::SealKey(value)
+    }
+}
+impl From<HpkeSealKeyToFileReply> for HpkeReply {
+    fn from(value: HpkeSealKeyToFileReply) -> Self {
+        Self::SealKeyToFile(value)
+    }
+}
 impl From<HpkeOpenReply> for HpkeReply {
     fn from(value: HpkeOpenReply) -> Self {
         Self::Open(value)
+    }
+}
+impl From<HpkeOpenKeyReply> for HpkeReply {
+    fn from(value: HpkeOpenKeyReply) -> Self {
+        Self::OpenKey(value)
+    }
+}
+impl From<HpkeOpenKeyFromFileReply> for HpkeReply {
+    fn from(value: HpkeOpenKeyFromFileReply) -> Self {
+        Self::OpenKeyFromFile(value)
     }
 }
 impl TryFrom<HpkeReply> for HpkeSealReply {
@@ -98,6 +254,26 @@ impl TryFrom<HpkeReply> for HpkeSealReply {
     fn try_from(value: HpkeReply) -> Result<Self, Self::Error> {
         match value {
             HpkeReply::Seal(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeReply> for HpkeSealKeyReply {
+    type Error = Error;
+    fn try_from(value: HpkeReply) -> Result<Self, Self::Error> {
+        match value {
+            HpkeReply::SealKey(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeReply> for HpkeSealKeyToFileReply {
+    type Error = Error;
+    fn try_from(value: HpkeReply) -> Result<Self, Self::Error> {
+        match value {
+            HpkeReply::SealKeyToFile(this) => Ok(this),
             _ => Err(Error::InternalError),
         }
     }
@@ -113,14 +289,24 @@ impl TryFrom<HpkeReply> for HpkeOpenReply {
     }
 }
 
-/// Seal to a public key
-///
-/// As described in 6.1 with mode "base"
-#[derive(Deserialize, Serialize)]
-pub struct HpkeSealReply {
-    pub enc: KeyId,
-    pub ciphertext: Message,
-    pub tag: ByteArray<16>,
+impl TryFrom<HpkeReply> for HpkeOpenKeyReply {
+    type Error = Error;
+    fn try_from(value: HpkeReply) -> Result<Self, Self::Error> {
+        match value {
+            HpkeReply::OpenKey(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
+}
+
+impl TryFrom<HpkeReply> for HpkeOpenKeyFromFileReply {
+    type Error = Error;
+    fn try_from(value: HpkeReply) -> Result<Self, Self::Error> {
+        match value {
+            HpkeReply::OpenKeyFromFile(this) => Ok(this),
+            _ => Err(Error::InternalError),
+        }
+    }
 }
 
 /// Open with a private key
@@ -129,6 +315,22 @@ pub struct HpkeSealReply {
 #[derive(Deserialize, Serialize)]
 pub struct HpkeOpenReply {
     pub plaintext: Message,
+}
+
+/// Open with a private key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeOpenKeyReply {
+    pub key: KeyId,
+}
+
+/// Open with a private key
+///
+/// As described in 6.1 with mode "base"
+#[derive(Deserialize, Serialize)]
+pub struct HpkeOpenKeyFromFileReply {
+    pub key: KeyId,
 }
 
 pub type HpkeResult<'a, R, C> = ExtensionResult<'a, HpkeExtension, R, C>;
@@ -158,6 +360,40 @@ pub trait HpkeClient: ExtensionClient<HpkeExtension> {
         }))
     }
 
+    fn hpke_seal_key(
+        &mut self,
+        public_key: KeyId,
+        key_to_seal: KeyId,
+        aad: ShortData,
+        info: ShortData,
+    ) -> HpkeResult<'_, HpkeSealKeyReply, Self> {
+        self.extension(HpkeRequest::SealKey(HpkeSealKeyRequest {
+            public_key,
+            key_to_seal,
+            aad,
+            info,
+        }))
+    }
+
+    fn hpke_seal_key_to_file(
+        &mut self,
+        file: PathBuf,
+        location: Location,
+        public_key: KeyId,
+        key_to_seal: KeyId,
+        aad: ShortData,
+        info: ShortData,
+    ) -> HpkeResult<'_, HpkeSealKeyToFileReply, Self> {
+        self.extension(HpkeRequest::SealKeyToFile(HpkeSealKeyToFileRequest {
+            file,
+            public_key,
+            key_to_seal,
+            aad,
+            info,
+            location,
+        }))
+    }
+
     fn hpke_open(
         &mut self,
         key: KeyId,
@@ -174,6 +410,40 @@ pub trait HpkeClient: ExtensionClient<HpkeExtension> {
             ciphertext,
             aad,
             info,
+        }))
+    }
+    fn hpke_open_key(
+        &mut self,
+        key: KeyId,
+        sealed_key: Message,
+        aad: ShortData,
+        info: ShortData,
+        location: Location,
+    ) -> HpkeResult<'_, HpkeOpenKeyReply, Self> {
+        self.extension(HpkeRequest::OpenKey(HpkeOpenKeyRequest {
+            key,
+            sealed_key,
+            aad,
+            info,
+            location,
+        }))
+    }
+    fn hpke_open_key_from_file(
+        &mut self,
+        key: KeyId,
+        sealed_key: PathBuf,
+        sealed_location: Location,
+        unsealed_location: Location,
+        aad: ShortData,
+        info: ShortData,
+    ) -> HpkeResult<'_, HpkeOpenKeyFromFileReply, Self> {
+        self.extension(HpkeRequest::OpenKeyFromFile(HpkeOpenKeyFromFileRequest {
+            key,
+            aad,
+            info,
+            sealed_key,
+            sealed_location,
+            unsealed_location,
         }))
     }
 }
