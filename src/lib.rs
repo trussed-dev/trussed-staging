@@ -24,6 +24,9 @@ mod chunked;
 #[cfg(feature = "hkdf")]
 mod hkdf;
 
+#[cfg(feature = "hpke")]
+mod hpke;
+
 #[cfg(feature = "manage")]
 mod manage;
 #[cfg(feature = "manage")]

@@ -12,6 +12,8 @@ use trussed_chunked::ChunkedExtension;
 use trussed_fs_info::FsInfoExtension;
 #[cfg(feature = "hkdf")]
 use trussed_hkdf::HkdfExtension;
+#[cfg(feature = "hpke")]
+use trussed_hpke::HpkeExtension;
 #[cfg(feature = "manage")]
 use trussed_manage::ManageExtension;
 #[cfg(feature = "wrap-key-to-file")]
@@ -41,6 +43,8 @@ pub enum ExtensionIds {
     WrapKeyToFile,
     #[cfg(feature = "fs-info")]
     FsInfo,
+    #[cfg(feature = "hpke")]
+    Hpke,
 }
 
 #[cfg(feature = "chunked")]
@@ -73,6 +77,12 @@ impl ExtensionId<FsInfoExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::FsInfo;
 }
 
+#[cfg(feature = "hpke")]
+impl ExtensionId<HpkeExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::Hpke;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
@@ -86,6 +96,8 @@ impl From<ExtensionIds> for u8 {
             ExtensionIds::WrapKeyToFile => 3,
             #[cfg(feature = "fs-info")]
             ExtensionIds::FsInfo => 4,
+            #[cfg(feature = "hpke")]
+            ExtensionIds::Hpke => 5,
         }
     }
 }
@@ -104,6 +116,8 @@ impl TryFrom<u8> for ExtensionIds {
             3 => Ok(Self::WrapKeyToFile),
             #[cfg(feature = "fs-info")]
             4 => Ok(Self::FsInfo),
+            #[cfg(feature = "hpke")]
+            5 => Ok(Self::Hpke),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -180,6 +194,14 @@ impl ExtensionDispatch for Dispatcher {
             ),
             #[cfg(feature = "fs-info")]
             ExtensionIds::FsInfo => ExtensionImpl::<FsInfoExtension>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
+            #[cfg(feature = "hpke")]
+            ExtensionIds::Hpke => ExtensionImpl::<HpkeExtension>::extension_request_serialized(
                 &mut self.backend,
                 &mut ctx.core,
                 &mut ctx.backends,

@@ -2,7 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [workspace]
-members = ["extensions/chunked", "extensions/fs-info", "extensions/hkdf", "extensions/manage", "extensions/wrap-key-to-file"]
+members = [
+  "extensions/chunked",
+  "extensions/fs-info",
+  "extensions/hkdf",
+  "extensions/hpke",
+  "extensions/manage",
+  "extensions/wrap-key-to-file",
+]
 
 [workspace.package]
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
@@ -35,15 +42,20 @@ hkdf = { version = "0.12", optional = true }
 rand_core = { version = "0.6.4", default-features = false }
 sha2 = { version = "0.10", default-features = false, optional = true }
 littlefs2 = "0.4.0"
+salty = { version = "0.3.0", default-features = false }
+digest = { version = "0.10.7", default-features = false }
+hex-literal = { version = "0.4.0", optional = true }
+aead = { version = "0.5.2", optional = true, default-features = false }
 
 trussed-chunked = { version = "0.1.0", optional = true }
 trussed-hkdf = { version = "0.2.0", optional = true }
+trussed-hpke = { version = "0.1.0", optional = true }
 trussed-manage = { version = "0.1.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.1.0", optional = true }
 trussed-fs-info = { version = "0.1.0", optional = true } 
 
 [dev-dependencies]
-hex-literal = "0.3.4"
+hex-literal = "0.4.0"
 hmac = "0.12.0"
 trussed = { workspace = true, features = ["virt"] }
 
@@ -52,8 +64,9 @@ default = []
 
 chunked = ["trussed-chunked", "chacha20poly1305/stream"]
 hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
+hpke = ["trussed-hpke", "dep:hkdf", "dep:sha2", "dep:hex-literal", "dep:aead", "dep:chacha20poly1305"]
 manage = ["trussed-manage"]
-wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
+wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file"]
 fs-info = ["trussed-fs-info"]
 
 virt = ["std", "trussed/virt"]
@@ -68,11 +81,12 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "a055e4f79a10122c8c0c882161442e6e02f0c5c6" }
+trussed = { git = "https://github.com/nitrokey/trussed.git", rev = "540ad725ef44f0d6d3d2da7dd6ec0bacffaeb5bf" }
 littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "960e57d9fc0d209308c8e15dc26252bbe1ff6ba8" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
+trussed-hpke = { path = "extensions/hpke" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
 trussed-fs-info= { path = "extensions/fs-info" }
