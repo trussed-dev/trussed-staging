@@ -2,7 +2,13 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [workspace]
-members = ["extensions/chunked", "extensions/hkdf", "extensions/manage", "extensions/wrap-key-to-file"]
+members = [
+  "extensions/chunked",
+  "extensions/hkdf",
+  "extensions/hpke",
+  "extensions/manage",
+  "extensions/wrap-key-to-file",
+]
 
 [workspace.package]
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
@@ -38,21 +44,28 @@ littlefs2 = "0.4.0"
 
 trussed-chunked = { version = "0.1.0", optional = true }
 trussed-hkdf = { version = "0.2.0", optional = true }
+trussed-hpke = { version = "0.1.0", optional = true }
 trussed-manage = { version = "0.1.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.1.0", optional = true }
+salty = { version = "0.3.0", default-features = false }
+hpke = { version = "0.11.0", default-features = false }
+digest = { version = "0.10.7", default-features = false }
+hex-literal = { version = "0.4.0", optional = true }
+aead = { version = "0.5.2", optional = true, default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
+hex-literal = "0.4.0"
 hmac = "0.12.0"
 trussed = { workspace = true, features = ["virt"] }
 
 [features]
-default = []
+default = ["hpke"]
 
 chunked = ["trussed-chunked", "chacha20poly1305/stream"]
 hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
+hpke = ["trussed-hpke", "dep:hkdf", "dep:sha2", "dep:hex-literal", "dep:aead", "dep:chacha20poly1305"]
 manage = ["trussed-manage"]
-wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
+wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file"]
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -71,5 +84,6 @@ littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "960e5
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
+trussed-hpke = { path = "extensions/hpke" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
