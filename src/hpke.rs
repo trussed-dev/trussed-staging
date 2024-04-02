@@ -1,6 +1,5 @@
 use crate::StagingBackend;
 
-use serde_byte_array::ByteArray;
 use trussed::{
     config::MAX_SERIALIZED_KEY_LENGTH,
     key,
@@ -15,21 +14,11 @@ use trussed_hpke::*;
 type HkdfSha256 = hkdf::Hkdf<sha2::Sha256>;
 type HkdfSha256Extract = hkdf::HkdfExtract<sha2::Sha256>;
 
-pub const NSK: usize = 32;
-pub const NPK: usize = 32;
-pub const N_ENC: usize = 32;
-pub const N_SECRET: usize = 32;
-
-pub const NDH: usize = 64;
-pub const KEM_ID: u16 = 0x20;
-pub const KDF_ID: u16 = 0x01;
-pub const AEAD_ID: u16 = 0x03;
-
 use rand_core::{CryptoRng, RngCore};
-use salty::{agreement as x25519, PublicKey};
+use salty::agreement as x25519;
 
-const KEM_SUITE_ID: &[u8] = b"KEM\x00\x20";
-const HPKE_SUITE_ID: &[u8] = b"HPKE\x00\x20\x00\x01\x00\x03";
+const X25519_CHACHA20_POLY1305_KEM_SUITE_ID: &[u8] = b"KEM\x00\x20";
+const X25519_HKDF_CHACHA20_POLY1305_HPKE_SUITE_ID: &[u8] = b"HPKE\x00\x20\x00\x01\x00\x03";
 
 fn labeled_extract(
     suite_id: &[u8],
@@ -62,18 +51,29 @@ fn labeled_expand(
     )
 }
 
-fn extract_and_expand(dh: x25519::SharedSecret, kem_context: &[u8]) -> [u8; N_SECRET] {
-    let (prk, _) = labeled_extract(KEM_SUITE_ID, b"", b"eae_prk", &dh.to_bytes());
-    let mut shr = [0; N_SECRET];
-    labeled_expand(KEM_SUITE_ID, &prk, b"shared_secret", kem_context, &mut shr)
-        .expect("Length of shr is known to be OK");
+fn extract_and_expand(dh: x25519::SharedSecret, kem_context: &[u8]) -> [u8; 32] {
+    let (prk, _) = labeled_extract(
+        X25519_CHACHA20_POLY1305_KEM_SUITE_ID,
+        b"",
+        b"eae_prk",
+        &dh.to_bytes(),
+    );
+    let mut shr = [0; 32];
+    labeled_expand(
+        X25519_CHACHA20_POLY1305_KEM_SUITE_ID,
+        &prk,
+        b"shared_secret",
+        kem_context,
+        &mut shr,
+    )
+    .expect("Length of shr is known to be OK");
     shr
 }
 
 fn encap<R: CryptoRng + RngCore>(
     pkr: x25519::PublicKey,
     cspnrg: &mut R,
-) -> ([u8; N_SECRET], x25519::PublicKey) {
+) -> ([u8; 32], x25519::PublicKey) {
     let seed = &mut [0; 32];
     cspnrg.fill_bytes(seed);
     let secret = x25519::SecretKey::from_seed(seed);
@@ -84,10 +84,10 @@ fn encap<R: CryptoRng + RngCore>(
     kem_context[0..32].copy_from_slice(&enc.to_bytes());
     kem_context[32..].copy_from_slice(&pkr.to_bytes());
     let shared_secret = extract_and_expand(dh, kem_context);
-    return (shared_secret, enc);
+    (shared_secret, enc)
 }
 
-fn decap(enc: x25519::PublicKey, skr: x25519::SecretKey) -> [u8; N_SECRET] {
+fn decap(enc: x25519::PublicKey, skr: x25519::SecretKey) -> [u8; 32] {
     let dh = skr.agree(&enc);
     let kem_context = &mut [0; 64];
     kem_context[0..32].copy_from_slice(&enc.to_bytes());
@@ -106,26 +106,59 @@ const MODE_BASE: u8 = 0x00;
 struct Context {
     key: [u8; NK],
     base_nonce: [u8; NN],
+    /// Used only in tests for comparison with the test vectors
+    #[allow(unused)]
     exporter_secret: [u8; NH],
     // Our limited version only allows one encryption/decryption
     // seq: u128,
+}
+
+trait Aead:
+    aead::AeadMutInPlace
+    + KeyInit<KeySize = <ChaCha20Poly1305 as aead::KeySizeUser>::KeySize>
+    + aead::AeadCore<
+        NonceSize = <ChaCha20Poly1305 as aead::AeadCore>::NonceSize,
+        TagSize = <ChaCha20Poly1305 as aead::AeadCore>::TagSize,
+    >
+{
+    const AEAD_ID: u16;
+    const X25519_HKDF_SELF_HPKE_SUITE_ID: &'static [u8];
+}
+
+impl Aead for ChaCha20Poly1305 {
+    const AEAD_ID: u16 = 0x0003;
+    const X25519_HKDF_SELF_HPKE_SUITE_ID: &'static [u8] =
+        X25519_HKDF_CHACHA20_POLY1305_HPKE_SUITE_ID;
+}
+
+impl Aead for ChaCha8Poly1305 {
+    /// Custom non-standard Id
+    const AEAD_ID: u16 = 0xFFFE;
+    const X25519_HKDF_SELF_HPKE_SUITE_ID: &'static [u8] = b"HPKE\x00\x20\x00\x01\xFF\xFE";
 }
 
 const NK: usize = 32;
 const NN: usize = 12;
 const NH: usize = 32;
 
-fn key_schedule(role: Role, shared_secret: [u8; N_SECRET], info: &[u8]) -> Context {
-    let (_, psk_id_hash) = labeled_extract(HPKE_SUITE_ID, b"", b"psk_id_hash", b"");
-    let (_, info_hash) = labeled_extract(HPKE_SUITE_ID, b"", b"info_hash", info);
+fn key_schedule<T: Aead>(_role: Role, shared_secret: [u8; 32], info: &[u8]) -> Context {
+    let (_, psk_id_hash) =
+        labeled_extract(T::X25519_HKDF_SELF_HPKE_SUITE_ID, b"", b"psk_id_hash", b"");
+    let (_, info_hash) =
+        labeled_extract(T::X25519_HKDF_SELF_HPKE_SUITE_ID, b"", b"info_hash", info);
     let mut key_schedule_context = [0; 65];
     key_schedule_context[0] = MODE_BASE;
     key_schedule_context[1..33].copy_from_slice(&psk_id_hash);
     key_schedule_context[33..].copy_from_slice(&info_hash);
-    let (secret, _) = labeled_extract(HPKE_SUITE_ID, &shared_secret, b"secret", b"");
+    let (secret, _) = labeled_extract(
+        T::X25519_HKDF_SELF_HPKE_SUITE_ID,
+        &shared_secret,
+        b"secret",
+        b"",
+    );
     let mut key = [0; NK];
     labeled_expand(
-        HPKE_SUITE_ID,
+        T::X25519_HKDF_SELF_HPKE_SUITE_ID,
         &secret,
         b"key",
         &key_schedule_context,
@@ -134,7 +167,7 @@ fn key_schedule(role: Role, shared_secret: [u8; N_SECRET], info: &[u8]) -> Conte
     .expect("KEY is not too large");
     let mut base_nonce = [0; NN];
     labeled_expand(
-        HPKE_SUITE_ID,
+        T::X25519_HKDF_SELF_HPKE_SUITE_ID,
         &secret,
         b"base_nonce",
         &key_schedule_context,
@@ -143,7 +176,7 @@ fn key_schedule(role: Role, shared_secret: [u8; N_SECRET], info: &[u8]) -> Conte
     .expect("NONCE is not too large");
     let mut exporter_secret = [0; NH];
     labeled_expand(
-        HPKE_SUITE_ID,
+        T::X25519_HKDF_SELF_HPKE_SUITE_ID,
         &secret,
         b"exp",
         &key_schedule_context,
@@ -157,29 +190,29 @@ fn key_schedule(role: Role, shared_secret: [u8; N_SECRET], info: &[u8]) -> Conte
     }
 }
 
-fn setup_base_s<R: CryptoRng + RngCore>(
+fn setup_base_s<R: CryptoRng + RngCore, T: Aead>(
     pkr: x25519::PublicKey,
     info: &[u8],
     cspnrg: &mut R,
 ) -> (x25519::PublicKey, Context) {
     let (shared_secret, enc) = encap(pkr, cspnrg);
-    (enc, key_schedule(Role::Sender, shared_secret, info))
+    (enc, key_schedule::<T>(Role::Sender, shared_secret, info))
 }
 
-fn setup_base_r(
+fn setup_base_r<T: Aead>(
     enc: x25519::PublicKey,
     skr: x25519::SecretKey,
     info: &[u8],
 ) -> (x25519::PublicKey, Context) {
     let shared_secret = decap(enc, skr);
-    (enc, key_schedule(Role::Receiver, shared_secret, info))
+    (enc, key_schedule::<T>(Role::Receiver, shared_secret, info))
 }
 
 const TAG_LEN: usize = 16;
 
 use chacha20poly1305::{
     aead::{AeadInPlace, KeyInit},
-    ChaCha20Poly1305,
+    ChaCha20Poly1305, ChaCha8Poly1305,
 };
 
 impl Context {
@@ -206,19 +239,29 @@ impl Context {
     }
 }
 
-fn seal<R: CryptoRng + RngCore>(
+fn seal<R: CryptoRng + RngCore, T: Aead>(
     pkr: x25519::PublicKey,
     info: &[u8],
     aad: &[u8],
     plaintext: &mut [u8],
     csprng: &mut R,
 ) -> (x25519::PublicKey, [u8; TAG_LEN]) {
-    let (enc, ctx) = setup_base_s(pkr, info, csprng);
+    let (enc, ctx) = setup_base_s::<_, T>(pkr, info, csprng);
     let tag = ctx.seal_in_place_detached(aad, plaintext);
-    return (enc, tag);
+    (enc, tag)
+}
+/// Seal with X25519-HKDF-SHA256-ChaCha8Poly1305 suite
+fn seal8<R: CryptoRng + RngCore>(
+    pkr: x25519::PublicKey,
+    info: &[u8],
+    aad: &[u8],
+    plaintext: &mut [u8],
+    csprng: &mut R,
+) -> (x25519::PublicKey, [u8; TAG_LEN]) {
+    seal::<R, ChaCha8Poly1305>(pkr, info, aad, plaintext, csprng)
 }
 
-fn open(
+fn open<T: Aead>(
     enc: x25519::PublicKey,
     skr: x25519::SecretKey,
     info: &[u8],
@@ -226,8 +269,20 @@ fn open(
     ciphertext: &mut [u8],
     tag: [u8; TAG_LEN],
 ) -> Result<(), aead::Error> {
-    let (_, ctx) = setup_base_r(enc, skr, info);
+    let (_, ctx) = setup_base_r::<T>(enc, skr, info);
     ctx.open_in_place_detached(aad, ciphertext, tag)
+}
+
+/// Open with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
+fn open8(
+    enc: x25519::PublicKey,
+    skr: x25519::SecretKey,
+    info: &[u8],
+    aad: &[u8],
+    ciphertext: &mut [u8],
+    tag: [u8; TAG_LEN],
+) -> Result<(), aead::Error> {
+    open::<ChaCha8Poly1305>(enc, skr, info, aad, ciphertext, tag)
 }
 
 #[cfg(test)]
@@ -267,6 +322,29 @@ mod tests {
         }
     }
 
+    /// Seal with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
+    fn seal20<R: CryptoRng + RngCore>(
+        pkr: x25519::PublicKey,
+        info: &[u8],
+        aad: &[u8],
+        plaintext: &mut [u8],
+        csprng: &mut R,
+    ) -> (x25519::PublicKey, [u8; TAG_LEN]) {
+        seal::<R, ChaCha20Poly1305>(pkr, info, aad, plaintext, csprng)
+    }
+
+    /// Open with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
+    fn open20(
+        enc: x25519::PublicKey,
+        skr: x25519::SecretKey,
+        info: &[u8],
+        aad: &[u8],
+        ciphertext: &mut [u8],
+        tag: [u8; TAG_LEN],
+    ) -> Result<(), aead::Error> {
+        open::<ChaCha20Poly1305>(enc, skr, info, aad, ciphertext, tag)
+    }
+
     #[allow(non_snake_case)]
     #[test]
     fn chacha20() {
@@ -289,7 +367,8 @@ mod tests {
             decap(alice_sk.public(), bob_sk.clone()),
             expected_shared_secret
         );
-        let (enc, ctx) = setup_base_s(bob_sk.public(), &info, &mut TestRng(&skEm));
+        let (enc, ctx) =
+            setup_base_s::<_, ChaCha20Poly1305>(bob_sk.public(), &info, &mut TestRng(&skEm));
         assert_eq!(enc.to_bytes(), pkEm);
         assert_eq!(
             ctx.key,
@@ -307,7 +386,7 @@ mod tests {
         let ct = hex!("1c5250d8034ec2b784ba2cfd69dbdb8af406cfe3ff938e131f0def8c8b");
         let expected_tag = hex!("60b4db21993c62ce81883d2dd1b51a28");
 
-        let (enc, tag) = seal(
+        let (enc, tag) = seal20(
             bob_sk.public(),
             &info,
             &aad,
@@ -317,43 +396,36 @@ mod tests {
         assert_eq!(enc.to_bytes(), pkEm);
         assert_eq!(buffer, ct);
         assert_eq!(tag, expected_tag);
-        open(enc, bob_sk, &info, &aad, &mut buffer, tag).unwrap();
+        open20(enc, bob_sk, &info, &aad, &mut buffer, tag).unwrap();
         assert_eq!(buffer, pt);
     }
+
+    const X25519_KEM_ID: u16 = 0x0020;
+    const HKDF_KDF_ID: u16 = 0x0001;
+    fn assert_suite_id<T: Aead>() {
+        let calculated_id: Vec<u8> = b"HPKE"
+            .into_iter()
+            .copied()
+            .chain(X25519_KEM_ID.to_be_bytes())
+            .chain(HKDF_KDF_ID.to_be_bytes())
+            .chain(T::AEAD_ID.to_be_bytes())
+            .collect();
+        assert_eq!(T::X25519_HKDF_SELF_HPKE_SUITE_ID, &calculated_id);
+    }
+
+    #[test]
+    fn ids() {
+        let calculated_id: Vec<u8> = b"KEM"
+            .into_iter()
+            .copied()
+            .chain(X25519_KEM_ID.to_be_bytes())
+            .collect();
+        assert_eq!(X25519_CHACHA20_POLY1305_KEM_SUITE_ID, &calculated_id);
+
+        assert_suite_id::<ChaCha20Poly1305>();
+        assert_suite_id::<ChaCha8Poly1305>();
+    }
 }
-
-impl StagingBackend {}
-
-// fn load_public_key(
-//     keystore: &mut impl Keystore,
-//     key_id: &KeyId,
-// ) -> Result<x25519::PublicKey, Error> {
-//     let public_bytes: [u8; 32] = keystore
-//         .load_key(key::Secrecy::Public, Some(key::Kind::X255), key_id)?
-//         .material
-//         .as_slice()
-//         .try_into()
-//         .map_err(|_| Error::InternalError)?;
-
-//     let public_key = public_bytes.into();
-
-//     Ok(public_key)
-// }
-
-// fn load_secret_key(
-//     keystore: &mut impl Keystore,
-//     key_id: &KeyId,
-// ) -> Result<agreement::SecretKey, Error> {
-//     let seed: [u8; 32] = keystore
-//         .load_key(key::Secrecy::Secret, Some(key::Kind::X255), key_id)?
-//         .material
-//         .as_slice()
-//         .try_into()
-//         .map_err(|_| Error::InternalError)?;
-
-//     let keypair = agreement::SecretKey::from_seed(&seed);
-//     Ok(keypair)
-// }
 
 fn load_public_key(
     key_id: &KeyId,
@@ -399,7 +471,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
             HpkeRequest::Seal(req) => {
                 let mut pt = req.plaintext.clone();
                 let public_key = load_public_key(&req.key, keystore)?;
-                let (pk, tag) = seal(public_key, &req.info, &req.aad, &mut pt, keystore.rng());
+                let (pk, tag) = seal8(public_key, &req.info, &req.aad, &mut pt, keystore.rng());
                 let enc = keystore.store_key(
                     req.enc_location,
                     key::Secrecy::Public,
@@ -421,7 +493,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
 
                 let public_key = load_public_key(&req.public_key, keystore)?;
 
-                let (pk, tag) = seal(
+                let (pk, tag) = seal8(
                     public_key,
                     &req.info,
                     &req.aad,
@@ -449,7 +521,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
 
                 let public_key = load_public_key(&req.public_key, keystore)?;
 
-                let (pk, tag) = seal(
+                let (pk, tag) = seal8(
                     public_key,
                     &req.info,
                     &req.aad,
@@ -472,7 +544,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 let secret_key = load_secret_key(&req.key, keystore)?;
 
                 let mut ct = req.ciphertext.clone();
-                open(
+                open8(
                     enc,
                     secret_key,
                     &req.info,
@@ -491,14 +563,14 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 let (ct, enc_bytes) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
                 let enc = x25519::PublicKey::from(*enc_bytes);
 
-                open(enc, secret_key, &req.info, &req.aad, ct, *tag)
+                open8(enc, secret_key, &req.info, &req.aad, ct, *tag)
                     .map_err(|_| trussed::Error::AeadError)?;
 
                 let key::Key {
                     flags: _,
                     kind,
                     material,
-                } = key::Key::try_deserialize(&ct)?;
+                } = key::Key::try_deserialize(ct)?;
 
                 let key =
                     keystore.store_key(req.location, key::Secrecy::Secret, kind, &material)?;
@@ -513,14 +585,14 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 let (ct, enc_bytes) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
                 let enc = x25519::PublicKey::from(*enc_bytes);
 
-                open(enc, secret_key, &req.info, &req.aad, ct, *tag)
+                open8(enc, secret_key, &req.info, &req.aad, ct, *tag)
                     .map_err(|_| trussed::Error::AeadError)?;
 
                 let key::Key {
                     flags: _,
                     kind,
                     material,
-                } = key::Key::try_deserialize(&ct)?;
+                } = key::Key::try_deserialize(ct)?;
 
                 let key = keystore.store_key(
                     req.unsealed_location,
@@ -529,7 +601,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                     &material,
                 )?;
 
-                Ok(HpkeOpenKeyReply { key }.into())
+                Ok(HpkeOpenKeyFromFileReply { key }.into())
             }
         }
     }
