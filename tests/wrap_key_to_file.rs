@@ -3,7 +3,7 @@
 
 #![cfg(all(feature = "virt", feature = "wrap-key-to-file"))]
 
-use trussed::client::CryptoClient;
+use trussed::client::{Client, CryptoClient};
 use trussed::syscall;
 use trussed::types::{
     KeyId, KeySerialization, Location::*, Mechanism, PathBuf, SignatureSerialization,
@@ -14,7 +14,7 @@ use trussed_staging::virt::with_ram_client;
 
 use trussed_wrap_key_to_file::WrapKeyToFileClient;
 
-fn assert_key_eq(key1: KeyId, key2: KeyId, client: &mut impl trussed::Client) {
+fn assert_key_eq(key1: KeyId, key2: KeyId, client: &mut impl Client) {
     let derivative1 = syscall!(client.sign(
         Mechanism::HmacSha256,
         key1,

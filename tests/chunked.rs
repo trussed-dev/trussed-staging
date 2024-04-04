@@ -4,7 +4,7 @@
 #![cfg(all(feature = "virt", feature = "chunked"))]
 
 use littlefs2::path::PathBuf;
-use trussed::{client::FilesystemClient, syscall, try_syscall, types::Location, Bytes};
+use trussed::{client::FilesystemClient, syscall, try_syscall, types::{Bytes, Location}};
 use trussed_chunked::{utils, ChunkedClient};
 use trussed_staging::virt::with_ram_client;
 

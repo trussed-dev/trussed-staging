@@ -6,8 +6,7 @@
 use littlefs2::path::PathBuf;
 use serde_byte_array::ByteArray;
 use trussed::{
-    client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location, Bytes,
-    Error,
+    client::{CryptoClient, FilesystemClient}, error::Error, syscall, try_syscall, types::{Bytes, Location},
 };
 use trussed_chunked::{
     utils::{self, EncryptionData},

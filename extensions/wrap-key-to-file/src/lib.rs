@@ -25,8 +25,8 @@ pub enum WrapKeyToFileRequest {
 pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
+    use trussed::error::Error;
     use trussed::types::{KeyId, Location, Mechanism, Message, PathBuf};
-    use trussed::Error;
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct WrapKeyToFile {
@@ -90,7 +90,7 @@ pub enum WrapKeyToFileReply {
 
 pub mod reply {
     use serde::{Deserialize, Serialize};
-    use trussed::{types::KeyId, Error};
+    use trussed::{types::KeyId, error::Error};
 
     use super::*;
 
