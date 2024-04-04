@@ -3,10 +3,11 @@
 
 use littlefs2::fs::OpenOptions;
 use littlefs2::io::SeekFrom;
+use littlefs2::object_safe::{DynFile, DynFilesystem};
 
-use trussed::store::{create_directories, DynFile, DynFilesystem, Store};
+use trussed::error::Error;
+use trussed::store::{create_directories, Store};
 use trussed::types::{Bytes, Location, Message, Path, PathBuf};
-use trussed::Error;
 
 use serde::{Deserialize, Serialize};
 

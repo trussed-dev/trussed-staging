@@ -3,10 +3,11 @@
 
 use littlefs2::{fs::DirEntry, path, path::Path};
 use trussed::{
+    error::Error,
+    platform::Platform,
     serde_extensions::{Extension, ExtensionImpl},
     store::Store,
     types::Location,
-    Error,
 };
 use trussed_manage::{
     FactoryResetClientReply, FactoryResetClientRequest, FactoryResetDeviceReply,
@@ -48,7 +49,7 @@ fn callback(
 }
 
 impl ExtensionImpl<ManageExtension> for StagingBackend {
-    fn extension_request<P: trussed::Platform>(
+    fn extension_request<P: Platform>(
         &mut self,
         _core_ctx: &mut trussed::types::CoreContext,
         _backend_ctx: &mut Self::Context,

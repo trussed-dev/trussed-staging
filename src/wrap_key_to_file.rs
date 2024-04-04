@@ -1,13 +1,16 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
+use generic_array::GenericArray;
 use trussed::{
     config::MAX_SERIALIZED_KEY_LENGTH,
+    error::Error,
     key::{self, Kind, Secrecy},
+    platform::Platform,
     serde_extensions::ExtensionImpl,
-    service::{Filestore, Keystore, ServiceResources},
-    types::{Bytes, CoreContext, GenericArray},
-    Error,
+    service::ServiceResources,
+    store::{filestore::Filestore, keystore::Keystore},
+    types::{Bytes, CoreContext},
 };
 use trussed_wrap_key_to_file::{
     reply, request, WrapKeyToFileExtension, WrapKeyToFileReply, WrapKeyToFileRequest,
@@ -113,7 +116,7 @@ fn unwrap_key_from_file(
 }
 
 impl ExtensionImpl<WrapKeyToFileExtension> for super::StagingBackend {
-    fn extension_request<P: trussed::Platform>(
+    fn extension_request<P: Platform>(
         &mut self,
         core_ctx: &mut CoreContext,
         _backend_ctx: &mut Self::Context,

@@ -5,12 +5,13 @@ use hkdf::Hkdf;
 use sha2::Sha256;
 use trussed::{
     config::MAX_MEDIUM_DATA_LENGTH,
+    error::Error,
     key::{Kind, Secrecy},
+    platform::Platform,
     serde_extensions::ExtensionImpl,
-    service::{ClientKeystore, Keystore, ServiceResources},
-    store::Store,
+    service::ServiceResources,
+    store::{Store, keystore::{ClientKeystore, Keystore}},
     types::{Bytes, CoreContext, MediumData, ShortData},
-    Error, Platform,
 };
 use trussed_hkdf::{
     HkdfExpandReply, HkdfExpandRequest, HkdfExtension, HkdfExtractReply, HkdfExtractRequest,

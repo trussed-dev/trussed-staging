@@ -11,12 +11,13 @@ use chacha20poly1305::{
 use rand_core::RngCore;
 use trussed::{
     config::MAX_MESSAGE_LENGTH,
+    error::Error,
     key::{Kind, Secrecy},
+    platform::Platform,
     serde_extensions::ExtensionImpl,
-    service::{Filestore, Keystore, ServiceResources},
-    store::Store,
-    types::{CoreContext, Location, Message, Path, PathBuf},
-    Bytes, Error,
+    service::ServiceResources,
+    store::{filestore::Filestore, keystore::Keystore, Store},
+    types::{Bytes, CoreContext, Location, Message, Path, PathBuf},
 };
 use trussed_chunked::{
     reply, ChunkedExtension, ChunkedReply, ChunkedRequest, CHACHA8_STREAM_NONCE_LEN,
@@ -62,7 +63,7 @@ pub enum ChunkedIoState {
 }
 
 impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
-    fn extension_request<P: trussed::Platform>(
+    fn extension_request<P: Platform>(
         &mut self,
         core_ctx: &mut CoreContext,
         backend_ctx: &mut Self::Context,

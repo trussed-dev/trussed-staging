@@ -105,7 +105,7 @@ impl ExtensionDispatch for Dispatcher {
         ctx: &mut trussed::types::Context<Self::Context>,
         request: &trussed::api::Request,
         resources: &mut trussed::service::ServiceResources<P>,
-    ) -> Result<trussed::Reply, Error> {
+    ) -> Result<trussed::api::Reply, Error> {
         self.backend
             .request(&mut ctx.core, &mut ctx.backends, request, resources)
     }
@@ -171,9 +171,10 @@ impl ExtensionDispatch for Dispatcher {
 use std::path::PathBuf;
 use trussed::{
     backend::{Backend, BackendId},
+    error::Error,
+    platform::Platform,
     serde_extensions::*,
     virt::{self, Filesystem, Ram, StoreProvider},
-    Error, Platform,
 };
 
 pub type Client<S, D = Dispatcher> = virt::Client<S, D>;

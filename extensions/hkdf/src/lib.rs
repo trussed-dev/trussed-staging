@@ -8,9 +8,9 @@
 use serde::{Deserialize, Serialize};
 use trussed::{
     config::MAX_MEDIUM_DATA_LENGTH,
+    error::Error,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Bytes, KeyId, Location, Message},
-    Error,
 };
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]

@@ -8,7 +8,7 @@ use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use trussed::{
-    client::HmacSha256,
+    client::mechanisms::HmacSha256,
     syscall,
     types::{Bytes, Location},
 };

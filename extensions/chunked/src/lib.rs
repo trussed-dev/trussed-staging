@@ -57,8 +57,8 @@ pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use serde_byte_array::ByteArray;
+    use trussed::error::Error;
     use trussed::types::{KeyId, Location, Message, PathBuf, UserAttribute};
-    use trussed::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {}
@@ -263,8 +263,8 @@ pub mod request {
 pub mod reply {
     use super::*;
     use serde::{Deserialize, Serialize};
+    use trussed::error::Error;
     use trussed::types::Message;
-    use trussed::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {

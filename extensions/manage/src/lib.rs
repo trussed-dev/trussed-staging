@@ -7,9 +7,9 @@
 
 use serde::{Deserialize, Serialize};
 use trussed::{
+    error::Error,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Path, PathBuf},
-    Error,
 };
 
 pub struct ManageExtension;
