@@ -20,7 +20,7 @@ type HkdfSha256Extract = hkdf::HkdfExtract<sha2::Sha256>;
 use rand_core::{CryptoRng, RngCore};
 use salty::agreement as x25519;
 
-const X25519_CHACHA20_POLY1305_KEM_SUITE_ID: &[u8] = b"KEM\x00\x20";
+const X25519_KEM_SUITE_ID: &[u8] = b"KEM\x00\x20";
 const X25519_HKDF_CHACHA20_POLY1305_HPKE_SUITE_ID: &[u8] = b"HPKE\x00\x20\x00\x01\x00\x03";
 
 fn labeled_extract(
@@ -55,15 +55,10 @@ fn labeled_expand(
 }
 
 fn extract_and_expand(dh: x25519::SharedSecret, kem_context: &[u8]) -> [u8; 32] {
-    let (prk, _) = labeled_extract(
-        X25519_CHACHA20_POLY1305_KEM_SUITE_ID,
-        b"",
-        b"eae_prk",
-        &dh.to_bytes(),
-    );
+    let (prk, _) = labeled_extract(X25519_KEM_SUITE_ID, b"", b"eae_prk", &dh.to_bytes());
     let mut shr = [0; 32];
     labeled_expand(
-        X25519_CHACHA20_POLY1305_KEM_SUITE_ID,
+        X25519_KEM_SUITE_ID,
         &prk,
         b"shared_secret",
         kem_context,
@@ -603,7 +598,7 @@ mod tests {
             .copied()
             .chain(X25519_KEM_ID.to_be_bytes())
             .collect();
-        assert_eq!(X25519_CHACHA20_POLY1305_KEM_SUITE_ID, &calculated_id);
+        assert_eq!(X25519_KEM_SUITE_ID, &calculated_id);
 
         assert_suite_id::<ChaCha20Poly1305>();
         assert_suite_id::<ChaCha8Poly1305>();
