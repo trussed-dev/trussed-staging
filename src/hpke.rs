@@ -112,11 +112,11 @@ struct Context {
 }
 
 trait Aead:
-    aead::AeadMutInPlace
-    + KeyInit<KeySize = <ChaCha20Poly1305 as aead::KeySizeUser>::KeySize>
-    + aead::AeadCore<
-        NonceSize = <ChaCha20Poly1305 as aead::AeadCore>::NonceSize,
-        TagSize = <ChaCha20Poly1305 as aead::AeadCore>::TagSize,
+    AeadMutInPlace
+    + KeyInit<KeySize = <ChaCha20Poly1305 as KeySizeUser>::KeySize>
+    + AeadCore<
+        NonceSize = <ChaCha20Poly1305 as AeadCore>::NonceSize,
+        TagSize = <ChaCha20Poly1305 as AeadCore>::TagSize,
     >
 {
     const AEAD_ID: u16;
@@ -209,7 +209,7 @@ fn setup_base_r<T: Aead>(
 const TAG_LEN: usize = 16;
 
 use chacha20poly1305::{
-    aead::{AeadInPlace, KeyInit},
+    aead::{AeadCore, AeadMutInPlace, KeyInit, KeySizeUser},
     ChaCha20Poly1305, ChaCha8Poly1305,
 };
 
