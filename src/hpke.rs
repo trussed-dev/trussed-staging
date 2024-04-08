@@ -285,148 +285,6 @@ fn open8(
     open::<ChaCha8Poly1305>(enc, skr, info, aad, ciphertext, tag)
 }
 
-#[cfg(test)]
-mod tests {
-    use core::num::NonZeroU32;
-
-    use hex_literal::hex;
-
-    use super::*;
-
-    struct TestRng<'a>(&'a [u8]);
-    impl<'a> CryptoRng for TestRng<'a> {}
-    impl<'a> RngCore for TestRng<'a> {
-        fn next_u32(&mut self) -> u32 {
-            let (value, rem) = self.0.split_first_chunk().unwrap();
-            self.0 = rem;
-            u32::from_be_bytes(*value)
-        }
-        fn next_u64(&mut self) -> u64 {
-            let (value, rem) = self.0.split_first_chunk().unwrap();
-            self.0 = rem;
-            u64::from_be_bytes(*value)
-        }
-
-        fn fill_bytes(&mut self, dest: &mut [u8]) {
-            let (value, rem) = self.0.split_at(dest.len());
-            self.0 = rem;
-            dest.copy_from_slice(value);
-        }
-        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-            if self.0.len() < dest.len() {
-                let error_code: NonZeroU32 = rand_core::Error::CUSTOM_START.try_into().unwrap();
-                return Err(rand_core::Error::from(error_code));
-            }
-            self.fill_bytes(dest);
-            Ok(())
-        }
-    }
-
-    /// Seal with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
-    fn seal20<R: CryptoRng + RngCore>(
-        pkr: x25519::PublicKey,
-        info: &[u8],
-        aad: &[u8],
-        plaintext: &mut [u8],
-        csprng: &mut R,
-    ) -> (x25519::PublicKey, [u8; TAG_LEN]) {
-        seal::<R, ChaCha20Poly1305>(pkr, info, aad, plaintext, csprng)
-    }
-
-    /// Open with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
-    fn open20(
-        enc: x25519::PublicKey,
-        skr: x25519::SecretKey,
-        info: &[u8],
-        aad: &[u8],
-        ciphertext: &mut [u8],
-        tag: [u8; TAG_LEN],
-    ) -> Result<(), aead::Error> {
-        open::<ChaCha20Poly1305>(enc, skr, info, aad, ciphertext, tag)
-    }
-
-    #[allow(non_snake_case)]
-    #[test]
-    fn chacha20() {
-        let info = hex!("4f6465206f6e2061204772656369616e2055726e");
-        let pkEm = hex!("1afa08d3dec047a643885163f1180476fa7ddb54c6a8029ea33f95796bf2ac4a");
-        let skEm = hex!("f4ec9b33b792c372c1d2c2063507b684ef925b8c75a42dbcbf57d63ccd381600");
-        let alice_sk = x25519::SecretKey::from_seed(&skEm);
-        assert_eq!(pkEm, alice_sk.public().to_bytes());
-        let pkRm = hex!("4310ee97d88cc1f088a5576c77ab0cf5c3ac797f3d95139c6c84b5429c59662a");
-        let skRm = hex!("8057991eef8f1f1af18f4a9491d16a1ce333f695d4db8e38da75975c4478e0fb");
-        let bob_sk = x25519::SecretKey::from_seed(&skRm);
-        assert_eq!(pkRm, bob_sk.public().to_bytes());
-        let expected_shared_secret =
-            hex!("0bbe78490412b4bbea4812666f7916932b828bba79942424abb65244930d69a7");
-        let (shared_secret, enc) = encap(bob_sk.public(), &mut TestRng(&skEm));
-        assert_eq!(enc.to_bytes(), pkEm);
-        assert_eq!(shared_secret, expected_shared_secret);
-
-        assert_eq!(
-            decap(alice_sk.public(), bob_sk.clone()),
-            expected_shared_secret
-        );
-        let (enc, ctx) =
-            setup_base_s::<_, ChaCha20Poly1305>(bob_sk.public(), &info, &mut TestRng(&skEm));
-        assert_eq!(enc.to_bytes(), pkEm);
-        assert_eq!(
-            ctx.key,
-            hex!("ad2744de8e17f4ebba575b3f5f5a8fa1f69c2a07f6e7500bc60ca6e3e3ec1c91")
-        );
-        assert_eq!(ctx.base_nonce, hex!("5c4d98150661b848853b547f"));
-        assert_eq!(
-            ctx.exporter_secret,
-            hex!("a3b010d4994890e2c6968a36f64470d3c824c8f5029942feb11e7a74b2921922")
-        );
-
-        let pt = hex!("4265617574792069732074727574682c20747275746820626561757479");
-        let mut buffer = pt;
-        let aad = hex!("436f756e742d30");
-        let ct = hex!("1c5250d8034ec2b784ba2cfd69dbdb8af406cfe3ff938e131f0def8c8b");
-        let expected_tag = hex!("60b4db21993c62ce81883d2dd1b51a28");
-
-        let (enc, tag) = seal20(
-            bob_sk.public(),
-            &info,
-            &aad,
-            &mut buffer,
-            &mut TestRng(&skEm),
-        );
-        assert_eq!(enc.to_bytes(), pkEm);
-        assert_eq!(buffer, ct);
-        assert_eq!(tag, expected_tag);
-        open20(enc, bob_sk, &info, &aad, &mut buffer, tag).unwrap();
-        assert_eq!(buffer, pt);
-    }
-
-    const X25519_KEM_ID: u16 = 0x0020;
-    const HKDF_KDF_ID: u16 = 0x0001;
-    fn assert_suite_id<T: Aead>() {
-        let calculated_id: Vec<u8> = b"HPKE"
-            .into_iter()
-            .copied()
-            .chain(X25519_KEM_ID.to_be_bytes())
-            .chain(HKDF_KDF_ID.to_be_bytes())
-            .chain(T::AEAD_ID.to_be_bytes())
-            .collect();
-        assert_eq!(T::X25519_HKDF_SELF_HPKE_SUITE_ID, &calculated_id);
-    }
-
-    #[test]
-    fn ids() {
-        let calculated_id: Vec<u8> = b"KEM"
-            .into_iter()
-            .copied()
-            .chain(X25519_KEM_ID.to_be_bytes())
-            .collect();
-        assert_eq!(X25519_CHACHA20_POLY1305_KEM_SUITE_ID, &calculated_id);
-
-        assert_suite_id::<ChaCha20Poly1305>();
-        assert_suite_id::<ChaCha8Poly1305>();
-    }
-}
-
 fn load_public_key(
     key_id: &KeyId,
     keystore: &mut impl Keystore,
@@ -604,5 +462,147 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 Ok(HpkeOpenKeyFromFileReply { key }.into())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::num::NonZeroU32;
+
+    use hex_literal::hex;
+
+    use super::*;
+
+    struct TestRng<'a>(&'a [u8]);
+    impl<'a> CryptoRng for TestRng<'a> {}
+    impl<'a> RngCore for TestRng<'a> {
+        fn next_u32(&mut self) -> u32 {
+            let (value, rem) = self.0.split_first_chunk().unwrap();
+            self.0 = rem;
+            u32::from_be_bytes(*value)
+        }
+        fn next_u64(&mut self) -> u64 {
+            let (value, rem) = self.0.split_first_chunk().unwrap();
+            self.0 = rem;
+            u64::from_be_bytes(*value)
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            let (value, rem) = self.0.split_at(dest.len());
+            self.0 = rem;
+            dest.copy_from_slice(value);
+        }
+        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+            if self.0.len() < dest.len() {
+                let error_code: NonZeroU32 = rand_core::Error::CUSTOM_START.try_into().unwrap();
+                return Err(rand_core::Error::from(error_code));
+            }
+            self.fill_bytes(dest);
+            Ok(())
+        }
+    }
+
+    /// Seal with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
+    fn seal20<R: CryptoRng + RngCore>(
+        pkr: x25519::PublicKey,
+        info: &[u8],
+        aad: &[u8],
+        plaintext: &mut [u8],
+        csprng: &mut R,
+    ) -> (x25519::PublicKey, [u8; TAG_LEN]) {
+        seal::<R, ChaCha20Poly1305>(pkr, info, aad, plaintext, csprng)
+    }
+
+    /// Open with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
+    fn open20(
+        enc: x25519::PublicKey,
+        skr: x25519::SecretKey,
+        info: &[u8],
+        aad: &[u8],
+        ciphertext: &mut [u8],
+        tag: [u8; TAG_LEN],
+    ) -> Result<(), aead::Error> {
+        open::<ChaCha20Poly1305>(enc, skr, info, aad, ciphertext, tag)
+    }
+
+    #[allow(non_snake_case)]
+    #[test]
+    fn chacha20() {
+        let info = hex!("4f6465206f6e2061204772656369616e2055726e");
+        let pkEm = hex!("1afa08d3dec047a643885163f1180476fa7ddb54c6a8029ea33f95796bf2ac4a");
+        let skEm = hex!("f4ec9b33b792c372c1d2c2063507b684ef925b8c75a42dbcbf57d63ccd381600");
+        let alice_sk = x25519::SecretKey::from_seed(&skEm);
+        assert_eq!(pkEm, alice_sk.public().to_bytes());
+        let pkRm = hex!("4310ee97d88cc1f088a5576c77ab0cf5c3ac797f3d95139c6c84b5429c59662a");
+        let skRm = hex!("8057991eef8f1f1af18f4a9491d16a1ce333f695d4db8e38da75975c4478e0fb");
+        let bob_sk = x25519::SecretKey::from_seed(&skRm);
+        assert_eq!(pkRm, bob_sk.public().to_bytes());
+        let expected_shared_secret =
+            hex!("0bbe78490412b4bbea4812666f7916932b828bba79942424abb65244930d69a7");
+        let (shared_secret, enc) = encap(bob_sk.public(), &mut TestRng(&skEm));
+        assert_eq!(enc.to_bytes(), pkEm);
+        assert_eq!(shared_secret, expected_shared_secret);
+
+        assert_eq!(
+            decap(alice_sk.public(), bob_sk.clone()),
+            expected_shared_secret
+        );
+        let (enc, ctx) =
+            setup_base_s::<_, ChaCha20Poly1305>(bob_sk.public(), &info, &mut TestRng(&skEm));
+        assert_eq!(enc.to_bytes(), pkEm);
+        assert_eq!(
+            ctx.key,
+            hex!("ad2744de8e17f4ebba575b3f5f5a8fa1f69c2a07f6e7500bc60ca6e3e3ec1c91")
+        );
+        assert_eq!(ctx.base_nonce, hex!("5c4d98150661b848853b547f"));
+        assert_eq!(
+            ctx.exporter_secret,
+            hex!("a3b010d4994890e2c6968a36f64470d3c824c8f5029942feb11e7a74b2921922")
+        );
+
+        let pt = hex!("4265617574792069732074727574682c20747275746820626561757479");
+        let mut buffer = pt;
+        let aad = hex!("436f756e742d30");
+        let ct = hex!("1c5250d8034ec2b784ba2cfd69dbdb8af406cfe3ff938e131f0def8c8b");
+        let expected_tag = hex!("60b4db21993c62ce81883d2dd1b51a28");
+
+        let (enc, tag) = seal20(
+            bob_sk.public(),
+            &info,
+            &aad,
+            &mut buffer,
+            &mut TestRng(&skEm),
+        );
+        assert_eq!(enc.to_bytes(), pkEm);
+        assert_eq!(buffer, ct);
+        assert_eq!(tag, expected_tag);
+        open20(enc, bob_sk, &info, &aad, &mut buffer, tag).unwrap();
+        assert_eq!(buffer, pt);
+    }
+
+    const X25519_KEM_ID: u16 = 0x0020;
+    const HKDF_KDF_ID: u16 = 0x0001;
+    fn assert_suite_id<T: Aead>() {
+        let calculated_id: Vec<u8> = b"HPKE"
+            .iter()
+            .copied()
+            .chain(X25519_KEM_ID.to_be_bytes())
+            .chain(HKDF_KDF_ID.to_be_bytes())
+            .chain(T::AEAD_ID.to_be_bytes())
+            .collect();
+        assert_eq!(T::X25519_HKDF_SELF_HPKE_SUITE_ID, &calculated_id);
+    }
+
+    #[test]
+    fn ids() {
+        let calculated_id: Vec<u8> = b"KEM"
+            .iter()
+            .copied()
+            .chain(X25519_KEM_ID.to_be_bytes())
+            .collect();
+        assert_eq!(X25519_CHACHA20_POLY1305_KEM_SUITE_ID, &calculated_id);
+
+        assert_suite_id::<ChaCha20Poly1305>();
+        assert_suite_id::<ChaCha8Poly1305>();
     }
 }
