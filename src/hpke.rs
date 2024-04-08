@@ -1,3 +1,6 @@
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
 use crate::StagingBackend;
 
 use trussed::{
