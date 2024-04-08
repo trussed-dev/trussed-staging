@@ -214,10 +214,10 @@ use chacha20poly1305::{
 };
 
 impl Context {
-    fn seal_in_place_detached(self, aad: &[u8], plaintext: &mut [u8]) -> [u8; TAG_LEN] {
+    fn seal_in_place_detached<T: Aead>(self, aad: &[u8], plaintext: &mut [u8]) -> [u8; TAG_LEN] {
         // We don't increment because the simplified API only allows 1 encryption
         let nonce = (&self.base_nonce).into();
-        let aead = ChaCha20Poly1305::new((&self.key).into());
+        let mut aead = T::new((&self.key).into());
         let tag = aead
             .encrypt_in_place_detached(nonce, aad, plaintext)
             .expect("Not used to encrypt data too large");
@@ -225,14 +225,14 @@ impl Context {
         tag.into()
     }
 
-    fn open_in_place_detached(
+    fn open_in_place_detached<T: Aead>(
         self,
         aad: &[u8],
         ciphertext: &mut [u8],
         tag: [u8; TAG_LEN],
     ) -> Result<(), aead::Error> {
         let nonce = (&self.base_nonce).into();
-        let aead = ChaCha20Poly1305::new((&self.key).into());
+        let mut aead = T::new((&self.key).into());
         aead.decrypt_in_place_detached(nonce, aad, ciphertext, (&tag).into())
     }
 }
@@ -245,7 +245,7 @@ fn seal<R: CryptoRng + RngCore, T: Aead>(
     csprng: &mut R,
 ) -> (x25519::PublicKey, [u8; TAG_LEN]) {
     let (enc, ctx) = setup_base_s::<_, T>(pkr, info, csprng);
-    let tag = ctx.seal_in_place_detached(aad, plaintext);
+    let tag = ctx.seal_in_place_detached::<T>(aad, plaintext);
     (enc, tag)
 }
 /// Seal with X25519-HKDF-SHA256-ChaCha8Poly1305 suite
@@ -268,7 +268,7 @@ fn open<T: Aead>(
     tag: [u8; TAG_LEN],
 ) -> Result<(), aead::Error> {
     let (_, ctx) = setup_base_r::<T>(enc, skr, info);
-    ctx.open_in_place_detached(aad, ciphertext, tag)
+    ctx.open_in_place_detached::<T>(aad, ciphertext, tag)
 }
 
 /// Open with X25519-HKDF-SHA256-ChaCha20Poly1305 suite
