@@ -1,0 +1,15 @@
+# Copyright (C) Nitrokey GmbH
+# SPDX-License-Identifier: CC0-1.0
+
+[package]
+name = "trussed-hpke"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+trussed.workspace = true
+serde-byte-array = "0.1.2"
