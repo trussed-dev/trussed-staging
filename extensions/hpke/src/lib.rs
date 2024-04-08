@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 //! Trussed Extension providing DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, ChaCha20Poly1305
-//! For more details, see https://www.rfc-editor.org/rfc/rfc9180.html#name-dhkemx25519-hkdf-sha256-hkdf
+//! For more details, see <https://www.rfc-editor.org/rfc/rfc9180.html#name-dhkemx25519-hkdf-sha256-hkdf>
 
 #![no_std]
 #![warn(non_ascii_idents, trivial_casts, unused, unused_qualifications)]
