@@ -197,13 +197,9 @@ fn setup_base_s<R: CryptoRng + RngCore, T: Aead>(
     (enc, key_schedule::<T>(Role::Sender, shared_secret, info))
 }
 
-fn setup_base_r<T: Aead>(
-    enc: x25519::PublicKey,
-    skr: x25519::SecretKey,
-    info: &[u8],
-) -> (x25519::PublicKey, Context) {
+fn setup_base_r<T: Aead>(enc: x25519::PublicKey, skr: x25519::SecretKey, info: &[u8]) -> Context {
     let shared_secret = decap(enc, skr);
-    (enc, key_schedule::<T>(Role::Receiver, shared_secret, info))
+    key_schedule::<T>(Role::Receiver, shared_secret, info)
 }
 
 const TAG_LEN: usize = 16;
@@ -267,7 +263,7 @@ fn open<T: Aead>(
     ciphertext: &mut [u8],
     tag: [u8; TAG_LEN],
 ) -> Result<(), aead::Error> {
-    let (_, ctx) = setup_base_r::<T>(enc, skr, info);
+    let ctx = setup_base_r::<T>(enc, skr, info);
     ctx.open_in_place_detached::<T>(aad, ciphertext, tag)
 }
 
