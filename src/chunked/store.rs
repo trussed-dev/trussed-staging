@@ -1,8 +1,9 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use littlefs2::fs::OpenOptions;
+use littlefs2::fs::FileOpenFlags;
 use littlefs2::io::SeekFrom;
+use littlefs2::path;
 
 use trussed::store::{create_directories, DynFile, DynFilesystem, Store};
 use trussed::types::{Bytes, Location, Message, Path, PathBuf};
@@ -68,8 +69,8 @@ pub fn fs_write_chunk(
     contents: &[u8],
     pos: OpenSeekFrom,
 ) -> Result<(), Error> {
-    fs.open_file_with_options_and_then(
-        &|options| options.read(true).write(true),
+    fs.open_file_with_flags_and_then(
+        FileOpenFlags::READ | FileOpenFlags::WRITE,
         path,
         &mut |file| {
             file.seek(pos.into())?;
@@ -128,8 +129,6 @@ pub fn move_file(
     store
         .fs(from_location)
         .open_file_and_then(from_path, &mut |from_file| {
-            let mut options = OpenOptions::new();
-            options.write(true).create(true).truncate(true);
             store
                 .fs(to_location)
                 .create_file_and_then(to_path, &mut |to_file| copy_file_data(from_file, to_file))
@@ -161,9 +160,9 @@ fn chunks_path(client_id: &Path, client_path: &Path, location: Location) -> Resu
     let mut path = PathBuf::new();
     path.push(client_id);
     match location {
-        Location::Volatile => path.push(&PathBuf::from("vfs-part")),
-        Location::External => path.push(&PathBuf::from("efs-part")),
-        Location::Internal => path.push(&PathBuf::from("ifs-part")),
+        Location::Volatile => path.push(path!("vfs-part")),
+        Location::External => path.push(path!("efs-part")),
+        Location::Internal => path.push(path!("ifs-part")),
     }
     path.push(client_path);
     Ok(path)
@@ -177,7 +176,7 @@ fn actual_path(client_id: &Path, client_path: &Path) -> Result<PathBuf, Error> {
 
     let mut path = PathBuf::new();
     path.push(client_id);
-    path.push(&PathBuf::from("dat"));
+    path.push(path!("dat"));
     path.push(client_path);
     Ok(path)
 }
@@ -269,8 +268,8 @@ pub fn append_file(
     let path = actual_path(client_id, path)?;
     store
         .fs(location)
-        .open_file_with_options_and_then(
-            &|options| options.write(true).append(true),
+        .open_file_with_flags_and_then(
+            FileOpenFlags::WRITE | FileOpenFlags::APPEND,
             &path,
             &mut |file| {
                 file.write_all(data)?;

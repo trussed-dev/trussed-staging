@@ -3,11 +3,11 @@
 
 #![cfg(all(feature = "virt", feature = "wrap-key-to-file"))]
 
+use littlefs2::path;
 use trussed::client::CryptoClient;
 use trussed::syscall;
 use trussed::types::{
-    KeyId, KeySerialization, Location::*, Mechanism, PathBuf, SignatureSerialization,
-    StorageAttributes,
+    KeyId, KeySerialization, Location::*, Mechanism, SignatureSerialization, StorageAttributes,
 };
 
 use trussed_staging::virt::with_ram_client;
@@ -101,7 +101,7 @@ fn chacha_wraptofile() {
         ))
         .key;
 
-        let path = PathBuf::from("test_file");
+        let path = path!("test_file");
 
         let key2 = syscall!(client.generate_secret_key(32, Volatile)).key;
 
@@ -109,7 +109,7 @@ fn chacha_wraptofile() {
             Mechanism::Chacha8Poly1305,
             key,
             key2,
-            path.clone(),
+            path.into(),
             Volatile,
             &[],
         ));
@@ -117,7 +117,7 @@ fn chacha_wraptofile() {
         let unwrapped = syscall!(client.unwrap_key_from_file(
             Mechanism::Chacha8Poly1305,
             key,
-            path.clone(),
+            path.into(),
             Volatile,
             Volatile,
             &[],
@@ -130,7 +130,7 @@ fn chacha_wraptofile() {
             Mechanism::Chacha8Poly1305,
             key,
             key2,
-            path.clone(),
+            path.into(),
             Volatile,
             b"some ad",
         ));
@@ -138,7 +138,7 @@ fn chacha_wraptofile() {
         assert!(syscall!(client.unwrap_key_from_file(
             Mechanism::Chacha8Poly1305,
             key,
-            path.clone(),
+            path.into(),
             Volatile,
             Volatile,
             &[],
@@ -149,7 +149,7 @@ fn chacha_wraptofile() {
         let unwrapped = syscall!(client.unwrap_key_from_file(
             Mechanism::Chacha8Poly1305,
             key,
-            path,
+            path.into(),
             Volatile,
             Volatile,
             b"some ad",
