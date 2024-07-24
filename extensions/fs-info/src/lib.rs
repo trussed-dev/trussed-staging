@@ -6,7 +6,11 @@
 #![deny(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
-use trussed::{serde_extensions::Extension, types::Location, Error};
+use trussed::{
+    serde_extensions::{Extension, ExtensionClient, ExtensionResult},
+    types::Location,
+    Error,
+};
 
 pub struct FsInfoExtension;
 
@@ -73,4 +77,12 @@ impl TryFrom<FsInfoExtensionReply> for FsInfoReply {
 impl Extension for FsInfoExtension {
     type Request = FsInfoExtensionRequest;
     type Reply = FsInfoExtensionReply;
+}
+
+pub type FsInfoResult<'a, R, C> = ExtensionResult<'a, FsInfoExtension, R, C>;
+
+pub trait FsInfoClient: ExtensionClient<FsInfoExtension> {
+    fn fs_info(&mut self, location: Location) -> FsInfoResult<'_, FsInfoReply, Self> {
+        self.extension(FsInfoRequest { location })
+    }
 }
