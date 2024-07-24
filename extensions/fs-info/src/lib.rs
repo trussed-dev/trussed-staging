@@ -86,3 +86,4 @@ pub trait FsInfoClient: ExtensionClient<FsInfoExtension> {
         self.extension(FsInfoRequest { location })
     }
 }
+impl<C: ExtensionClient<FsInfoExtension>> FsInfoClient for C {}
