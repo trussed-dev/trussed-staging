@@ -48,11 +48,12 @@ fn chacha_wrapkey() {
         let key2 = syscall!(client.generate_secret_key(32, Volatile)).key;
 
         let wrapped =
-            syscall!(client.wrap_key(Mechanism::Chacha8Poly1305, key, key2, &[])).wrapped_key;
+            syscall!(client.wrap_key(Mechanism::Chacha8Poly1305, key, key2, &[], None)).wrapped_key;
         let unwrapped = syscall!(client.unwrap_key(
             Mechanism::Chacha8Poly1305,
             key,
             wrapped,
+            &[],
             &[],
             StorageAttributes::new()
         ))
@@ -61,11 +62,13 @@ fn chacha_wrapkey() {
         assert_key_eq(key2, unwrapped, client);
 
         let wrapped_ad =
-            syscall!(client.wrap_key(Mechanism::Chacha8Poly1305, key, key2, b"abc")).wrapped_key;
+            syscall!(client.wrap_key(Mechanism::Chacha8Poly1305, key, key2, b"abc", None))
+                .wrapped_key;
         assert!(syscall!(client.unwrap_key(
             Mechanism::Chacha8Poly1305,
             key,
             wrapped_ad.clone(),
+            &[],
             &[],
             StorageAttributes::new()
         ))
@@ -76,6 +79,7 @@ fn chacha_wrapkey() {
             key,
             wrapped_ad,
             b"abc",
+            &[],
             StorageAttributes::new()
         ))
         .key

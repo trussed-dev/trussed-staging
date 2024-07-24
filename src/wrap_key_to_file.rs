@@ -89,7 +89,7 @@ fn unwrap_key_from_file(
     let nonce = (&*nonce).try_into().unwrap();
     let tag = (&*tag).try_into().unwrap();
 
-    let key = keystore.load_key(key::Secrecy::Secret, Some(KIND), &request.key)?;
+    let key = keystore.load_key(Secrecy::Secret, Some(KIND), &request.key)?;
     let chachakey: [u8; KEY_LEN] = (&*key.material).try_into().unwrap();
     let mut aead = ChaCha8Poly1305::new(&GenericArray::clone_from_slice(&chachakey));
     if aead
