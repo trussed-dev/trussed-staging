@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [workspace]
-members = ["extensions/chunked", "extensions/hkdf", "extensions/manage", "extensions/wrap-key-to-file"]
+members = ["extensions/chunked", "extensions/fs-info", "extensions/hkdf", "extensions/manage", "extensions/wrap-key-to-file"]
 
 [workspace.package]
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
@@ -40,6 +40,7 @@ trussed-chunked = { version = "0.1.0", optional = true }
 trussed-hkdf = { version = "0.2.0", optional = true }
 trussed-manage = { version = "0.1.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.1.0", optional = true }
+trussed-fs-info = { version = "0.1.0", optional = true } 
 
 [dev-dependencies]
 hex-literal = "0.3.4"
@@ -53,6 +54,7 @@ chunked = ["trussed-chunked", "chacha20poly1305/stream"]
 hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
 manage = ["trussed-manage"]
 wrap-key-to-file = ["chacha20poly1305", "trussed-wrap-key-to-file"]
+fs-info = ["trussed-fs-info"]
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -73,3 +75,4 @@ trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
+trussed-fs-info= { path = "extensions/fs-info" }
