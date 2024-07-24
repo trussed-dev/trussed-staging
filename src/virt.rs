@@ -8,6 +8,8 @@ use trussed::types::{Location, Path};
 
 #[cfg(feature = "chunked")]
 use trussed_chunked::ChunkedExtension;
+#[cfg(feature = "fs-info")]
+use trussed_fs_info::FsInfoExtension;
 #[cfg(feature = "hkdf")]
 use trussed_hkdf::HkdfExtension;
 #[cfg(feature = "manage")]
@@ -37,6 +39,8 @@ pub enum ExtensionIds {
     Manage,
     #[cfg(feature = "wrap-key-to-file")]
     WrapKeyToFile,
+    #[cfg(feature = "fs-info")]
+    FsInfo,
 }
 
 #[cfg(feature = "chunked")]
@@ -63,6 +67,12 @@ impl ExtensionId<WrapKeyToFileExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::WrapKeyToFile;
 }
 
+#[cfg(feature = "fs-info")]
+impl ExtensionId<FsInfoExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::FsInfo;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
@@ -74,6 +84,8 @@ impl From<ExtensionIds> for u8 {
             ExtensionIds::Manage => 2,
             #[cfg(feature = "wrap-key-to-file")]
             ExtensionIds::WrapKeyToFile => 3,
+            #[cfg(feature = "fs-info")]
+            ExtensionIds::FsInfo => 4,
         }
     }
 }
@@ -90,6 +102,8 @@ impl TryFrom<u8> for ExtensionIds {
             2 => Ok(Self::Manage),
             #[cfg(feature = "wrap-key-to-file")]
             3 => Ok(Self::WrapKeyToFile),
+            #[cfg(feature = "fs-info")]
+            4 => Ok(Self::FsInfo),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -158,6 +172,14 @@ impl ExtensionDispatch for Dispatcher {
 
             #[cfg(feature = "manage")]
             ExtensionIds::Manage => ExtensionImpl::<ManageExtension>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
+            #[cfg(feature = "fs-info")]
+            ExtensionIds::FsInfo => ExtensionImpl::<FsInfoExtension>::extension_request_serialized(
                 &mut self.backend,
                 &mut ctx.core,
                 &mut ctx.backends,
