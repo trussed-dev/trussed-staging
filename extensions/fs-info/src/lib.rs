@@ -14,12 +14,12 @@ use trussed::{
 
 pub struct FsInfoExtension;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum FsInfoExtensionRequest {
     FsInfo(FsInfoRequest),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct FsInfoRequest {
     pub location: Location,
 }
@@ -40,18 +40,18 @@ impl TryFrom<FsInfoExtensionRequest> for FsInfoRequest {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum FsInfoExtensionReply {
     FsInfo(FsInfoReply),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct FsInfoReply {
     pub block_info: Option<BlockInfo>,
     pub available_space: usize,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct BlockInfo {
     pub size: usize,
     pub total: usize,
