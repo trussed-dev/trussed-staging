@@ -15,6 +15,9 @@ pub mod virt;
 #[cfg(feature = "wrap-key-to-file")]
 mod wrap_key_to_file;
 
+#[cfg(feature = "fs-info")]
+mod fs_info;
+
 #[cfg(feature = "chunked")]
 mod chunked;
 
