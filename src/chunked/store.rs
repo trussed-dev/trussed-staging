@@ -3,6 +3,7 @@
 
 use littlefs2::fs::OpenOptions;
 use littlefs2::io::SeekFrom;
+use littlefs2::path;
 
 use trussed::store::{create_directories, DynFile, DynFilesystem, Store};
 use trussed::types::{Bytes, Location, Message, Path, PathBuf};
@@ -161,9 +162,9 @@ fn chunks_path(client_id: &Path, client_path: &Path, location: Location) -> Resu
     let mut path = PathBuf::new();
     path.push(client_id);
     match location {
-        Location::Volatile => path.push(&PathBuf::from("vfs-part")),
-        Location::External => path.push(&PathBuf::from("efs-part")),
-        Location::Internal => path.push(&PathBuf::from("ifs-part")),
+        Location::Volatile => path.push(path!("vfs-part")),
+        Location::External => path.push(path!("efs-part")),
+        Location::Internal => path.push(path!("ifs-part")),
     }
     path.push(client_path);
     Ok(path)
@@ -177,7 +178,7 @@ fn actual_path(client_id: &Path, client_path: &Path) -> Result<PathBuf, Error> {
 
     let mut path = PathBuf::new();
     path.push(client_id);
-    path.push(&PathBuf::from("dat"));
+    path.push(path!("dat"));
     path.push(client_path);
     Ok(path)
 }
