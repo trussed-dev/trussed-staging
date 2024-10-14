@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use littlefs2::{fs::DirEntry, path, path::Path};
+use littlefs2_core::{path, DirEntry, Path};
 use trussed::{
     serde_extensions::{Extension, ExtensionImpl},
     store::Store,
