@@ -3,7 +3,7 @@
 
 #![cfg(all(feature = "virt", feature = "chunked"))]
 
-use littlefs2::path::PathBuf;
+use littlefs2_core::{path, PathBuf};
 use serde_byte_array::ByteArray;
 use trussed::{
     client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location, Bytes,
@@ -18,7 +18,7 @@ use trussed_staging::virt::with_ram_client;
 fn test_write_all(location: Location) {
     with_ram_client("test chunked", |mut client| {
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
-        let path = PathBuf::from("foo");
+        let path = PathBuf::from(path!("foo"));
         utils::write_all(
             &mut client,
             location,
@@ -40,7 +40,7 @@ fn test_write_all(location: Location) {
 fn test_write_all_small(location: Location) {
     with_ram_client("test chunked", |mut client| {
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
-        let path = PathBuf::from("foo2");
+        let path = PathBuf::from(path!("foo2"));
         utils::write_all(
             &mut client,
             location,
@@ -78,10 +78,11 @@ fn write_all_internal() {
 #[test]
 fn encrypted_filesystem() {
     with_ram_client("chunked-tests", |mut client| {
+        let path = PathBuf::from(path!("test_file"));
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
 
         assert!(
-            syscall!(client.entry_metadata(Location::Internal, PathBuf::from("test_file")))
+            syscall!(client.entry_metadata(Location::Internal, path.clone()))
                 .metadata
                 .is_none(),
         );
@@ -92,7 +93,7 @@ fn encrypted_filesystem() {
         // ======== CHUNKED WRITES ========
         syscall!(client.start_encrypted_chunked_write(
             Location::Internal,
-            PathBuf::from("test_file"),
+            path.clone(),
             key,
             Some(ByteArray::from([0; 8])),
             None
@@ -104,11 +105,7 @@ fn encrypted_filesystem() {
 
         // ======== CHUNKED READS ========
         let full_len = large_data.len() + large_data2.len() + more_data.len();
-        syscall!(client.start_encrypted_chunked_read(
-            Location::Internal,
-            PathBuf::from("test_file"),
-            key
-        ));
+        syscall!(client.start_encrypted_chunked_read(Location::Internal, path.clone(), key));
         let first_data = syscall!(client.read_file_chunk());
         assert_eq!(&first_data.data, &large_data);
         assert_eq!(first_data.len, full_len);
@@ -126,16 +123,15 @@ fn encrypted_filesystem() {
             Err(Error::MechanismNotAvailable)
         );
 
-        let metadata =
-            syscall!(client.entry_metadata(Location::Internal, PathBuf::from("test_file")))
-                .metadata
-                .unwrap();
+        let metadata = syscall!(client.entry_metadata(Location::Internal, path.clone()))
+            .metadata
+            .unwrap();
         assert!(metadata.is_file());
 
         // ======== ABORTED CHUNKED WRITES ========
         syscall!(client.start_encrypted_chunked_write(
             Location::Internal,
-            PathBuf::from("test_file"),
+            path.clone(),
             key,
             Some(ByteArray::from([1; 8])),
             None
@@ -146,11 +142,7 @@ fn encrypted_filesystem() {
         syscall!(client.abort_chunked_write());
 
         //  Old data is still there after abort
-        syscall!(client.start_encrypted_chunked_read(
-            Location::Internal,
-            PathBuf::from("test_file"),
-            key
-        ));
+        syscall!(client.start_encrypted_chunked_read(Location::Internal, path.clone(), key));
         let first_data = syscall!(client.read_file_chunk());
         assert_eq!(&first_data.data, &large_data);
         assert_eq!(first_data.len, full_len);
@@ -169,19 +161,18 @@ fn encrypted_filesystem() {
         );
 
         // This returns an error because the name doesn't exist
-        assert!(
-            try_syscall!(client.remove_file(Location::Internal, PathBuf::from("bad_name")))
-                .is_err()
-        );
-        let metadata =
-            syscall!(client.entry_metadata(Location::Internal, PathBuf::from("test_file")))
-                .metadata
-                .unwrap();
+        assert!(try_syscall!(
+            client.remove_file(Location::Internal, PathBuf::from(path!("bad_name")))
+        )
+        .is_err());
+        let metadata = syscall!(client.entry_metadata(Location::Internal, path.clone()))
+            .metadata
+            .unwrap();
         assert!(metadata.is_file());
 
-        syscall!(client.remove_file(Location::Internal, PathBuf::from("test_file")));
+        syscall!(client.remove_file(Location::Internal, path.clone()));
         assert!(
-            syscall!(client.entry_metadata(Location::Internal, PathBuf::from("test_file")))
+            syscall!(client.entry_metadata(Location::Internal, path.clone()))
                 .metadata
                 .is_none(),
         );

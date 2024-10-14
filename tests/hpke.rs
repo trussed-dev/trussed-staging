@@ -3,7 +3,7 @@
 
 #![cfg(all(feature = "virt", feature = "hpke"))]
 
-use littlefs2::path;
+use littlefs2_core::path;
 use trussed::client::{CryptoClient, X255};
 use trussed::{
     syscall,

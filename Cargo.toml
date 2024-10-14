@@ -41,7 +41,7 @@ delog = "0.1.6"
 hkdf = { version = "0.12", optional = true }
 rand_core = { version = "0.6.4", default-features = false }
 sha2 = { version = "0.10", default-features = false, optional = true }
-littlefs2 = "0.4.0"
+littlefs2-core = "0.1"
 salty = { version = "0.3.0", default-features = false }
 digest = { version = "0.10.7", default-features = false }
 hex-literal = { version = "0.4.0", optional = true }
@@ -81,8 +81,7 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/nitrokey/trussed.git", rev = "540ad725ef44f0d6d3d2da7dd6ec0bacffaeb5bf" }
-littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "960e57d9fc0d209308c8e15dc26252bbe1ff6ba8" }
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "046478b7a4f6e2315acf9112d98308379c2e3eee" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }

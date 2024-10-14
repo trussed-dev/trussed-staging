@@ -1,9 +1,9 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use littlefs2::fs::OpenOptions;
-use littlefs2::io::SeekFrom;
-use littlefs2::path;
+use littlefs2_core::path;
+use littlefs2_core::FileOpenFlags;
+use littlefs2_core::SeekFrom;
 
 use trussed::store::{create_directories, DynFile, DynFilesystem, Store};
 use trussed::types::{Bytes, Location, Message, Path, PathBuf};
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 /// Enumeration of possible methods to seek within an file that was just opened
 /// Used in the [`read_chunk`](crate::store::read_chunk) and [`write_chunk`](crate::store::write_chunk) calls,
-/// Where [`SeekFrom::Current`](littlefs2::io::SeekFrom::Current) would not make sense.
+/// Where [`SeekFrom::Current`](littlefs2_core::SeekFrom::Current) would not make sense.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum OpenSeekFrom {
     Start(u32),
@@ -69,8 +69,8 @@ pub fn fs_write_chunk(
     contents: &[u8],
     pos: OpenSeekFrom,
 ) -> Result<(), Error> {
-    fs.open_file_with_options_and_then(
-        &|options| options.read(true).write(true),
+    fs.open_file_with_flags_and_then(
+        FileOpenFlags::READ | FileOpenFlags::WRITE,
         path,
         &mut |file| {
             file.seek(pos.into())?;
@@ -129,8 +129,6 @@ pub fn move_file(
     store
         .fs(from_location)
         .open_file_and_then(from_path, &mut |from_file| {
-            let mut options = OpenOptions::new();
-            options.write(true).create(true).truncate(true);
             store
                 .fs(to_location)
                 .create_file_and_then(to_path, &mut |to_file| copy_file_data(from_file, to_file))
@@ -141,7 +139,7 @@ pub fn move_file(
         })
 }
 
-fn copy_file_data(from: &dyn DynFile, to: &dyn DynFile) -> Result<(), littlefs2::io::Error> {
+fn copy_file_data(from: &dyn DynFile, to: &dyn DynFile) -> Result<(), littlefs2_core::Error> {
     let mut buf = [0; 1024];
     loop {
         let read = from.read(&mut buf)?;
@@ -270,8 +268,8 @@ pub fn append_file(
     let path = actual_path(client_id, path)?;
     store
         .fs(location)
-        .open_file_with_options_and_then(
-            &|options| options.write(true).append(true),
+        .open_file_with_flags_and_then(
+            FileOpenFlags::WRITE | FileOpenFlags::APPEND,
             &path,
             &mut |file| {
                 file.write_all(data)?;
