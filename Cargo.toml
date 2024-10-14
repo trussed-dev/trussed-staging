@@ -68,8 +68,8 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "a055e4f79a10122c8c0c882161442e6e02f0c5c6" }
-littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "960e57d9fc0d209308c8e15dc26252bbe1ff6ba8" }
+trussed = { git = "https://github.com/Nitrokey/trussed.git", branch = "littlefs2-error" }
+littlefs2 = { git = "https://github.com/trussed-dev/littlefs2.git", rev = "97a7939437c93244bc8e7bea2a6d42e33ad66196" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
