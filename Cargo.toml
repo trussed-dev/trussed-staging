@@ -24,7 +24,7 @@ trussed = { version = "0.1.0", features = ["serde-extensions"] }
 
 [package]
 name = "trussed-staging"
-version = "0.3.0"
+version = "0.3.2"
 description = "Work in progress trussed features"
 authors.workspace = true
 edition.workspace = true
