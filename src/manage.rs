@@ -22,7 +22,7 @@ pub struct State {
     /// The path start all  start with the root. Here is an example such function:
     /// ```rust
     ///# use trussed::types::{Path, Location};
-    ///# use littlefs2::path;
+    ///# use littlefs2_core::path;
     /// fn should_preserve(path: &Path, location: Location) -> bool {
     ///     (location == Location::Internal && path == path!("/client1/dat/to_save_internal"))
     ///         || (location == Location::External && path == path!("/client1/dat/to_save_external"))
