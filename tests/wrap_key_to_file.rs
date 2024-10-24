@@ -3,6 +3,7 @@
 
 #![cfg(all(feature = "virt", feature = "wrap-key-to-file"))]
 
+use littlefs2_core::path;
 use trussed::client::CryptoClient;
 use trussed::syscall;
 use trussed::types::{
@@ -101,7 +102,7 @@ fn chacha_wraptofile() {
         ))
         .key;
 
-        let path = PathBuf::from("test_file");
+        let path = PathBuf::from(path!("test_file"));
 
         let key2 = syscall!(client.generate_secret_key(32, Volatile)).key;
 
