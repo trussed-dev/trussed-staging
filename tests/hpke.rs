@@ -14,7 +14,7 @@ use trussed_hpke::HpkeClient;
 
 use trussed_staging::virt;
 
-fn assert_symkey_eq<C: trussed::Client>(this: KeyId, other: KeyId, client: &mut C) {
+fn assert_symkey_eq<C: CryptoClient>(this: KeyId, other: KeyId, client: &mut C) {
     let hmac_this = syscall!(client.sign(
         Mechanism::HmacSha256,
         this,

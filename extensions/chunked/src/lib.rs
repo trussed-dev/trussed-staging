@@ -9,10 +9,10 @@ pub mod utils;
 
 use serde::{Deserialize, Serialize};
 use serde_byte_array::ByteArray;
-use trussed::{
-    client::FilesystemClient,
+use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{KeyId, Location, Message, PathBuf, UserAttribute},
+    FilesystemClient,
 };
 
 pub const CHACHA8_STREAM_NONCE_LEN: usize = 8;
@@ -57,8 +57,8 @@ pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use serde_byte_array::ByteArray;
-    use trussed::types::{KeyId, Location, Message, PathBuf, UserAttribute};
-    use trussed::Error;
+    use trussed_core::types::{KeyId, Location, Message, PathBuf, UserAttribute};
+    use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {}
@@ -263,8 +263,8 @@ pub mod request {
 pub mod reply {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed::types::Message;
-    use trussed::Error;
+    use trussed_core::types::Message;
+    use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {
@@ -542,7 +542,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Partially read a file from a given offset, returning a chunk of the given length and the
     /// total file size.
     ///
-    /// If the length is greater than [`trussed::config::MAX_MESSAGE_LENGTH`][] or if the offset is
+    /// If the length is greater than [`trussed_core::config::MAX_MESSAGE_LENGTH`][] or if the offset is
     /// greater than the file size, an error is returned.
     fn partial_read_file(
         &mut self,

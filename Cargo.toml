@@ -18,9 +18,10 @@ repository = "https://github.com/trussed-dev/trussed-staging"
 license = "Apache-2.0 OR MIT"
 
 [workspace.dependencies]
+littlefs2-core = "0.1"
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 serde-byte-array = "0.1.2"
-trussed = { version = "0.1.0", features = ["serde-extensions"] }
+trussed-core = { version = "0.1.0-rc.1", features = ["serde-extensions"] }
 
 [package]
 name = "trussed-staging"
@@ -32,17 +33,17 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+littlefs2-core.workspace = true
 serde.workspace = true
 serde-byte-array.workspace = true
-trussed.workspace = true
 
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["heapless", "reduced-round"], optional = true }
 delog = "0.1.6"
 hkdf = { version = "0.12", optional = true }
 rand_core = { version = "0.6.4", default-features = false }
 sha2 = { version = "0.10", default-features = false, optional = true }
-littlefs2-core = "0.1"
 salty = { version = "0.3.0", default-features = false }
+trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions"] }
 digest = { version = "0.10.7", default-features = false }
 hex-literal = { version = "0.4.0", optional = true }
 aead = { version = "0.5.2", optional = true, default-features = false }
@@ -57,7 +58,7 @@ trussed-fs-info = { version = "0.1.0", optional = true }
 [dev-dependencies]
 hex-literal = "0.4.0"
 hmac = "0.12.0"
-trussed = { workspace = true, features = ["virt"] }
+trussed = { version = "0.1.0", default-features = false, features = ["aes256-cbc", "clients-2", "crypto-client", "filesystem-client", "hmac-sha256", "virt", "x255"] }
 
 [features]
 default = []
@@ -66,7 +67,7 @@ chunked = ["trussed-chunked", "chacha20poly1305/stream"]
 hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
 hpke = ["trussed-hpke", "dep:hkdf", "dep:sha2", "dep:hex-literal", "dep:aead", "dep:chacha20poly1305"]
 manage = ["trussed-manage"]
-wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file"]
+wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file", "trussed/chacha8-poly1305"]
 fs-info = ["trussed-fs-info"]
 
 virt = ["std", "trussed/virt"]
@@ -81,7 +82,7 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "046478b7a4f6e2315acf9112d98308379c2e3eee" }
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "6bba8fde36d05c0227769eb63345744e87d84b2b" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }

@@ -6,10 +6,10 @@
 #![deny(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
-use trussed::{
-    client::ClientError,
+use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Bytes, KeyId, Location, Mechanism, PathBuf},
+    ClientError,
 };
 
 #[derive(Debug, Default)]
@@ -25,8 +25,8 @@ pub enum WrapKeyToFileRequest {
 pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed::types::{KeyId, Location, Mechanism, Message, PathBuf};
-    use trussed::Error;
+    use trussed_core::types::{KeyId, Location, Mechanism, Message, PathBuf};
+    use trussed_core::Error;
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct WrapKeyToFile {
@@ -90,7 +90,7 @@ pub enum WrapKeyToFileReply {
 
 pub mod reply {
     use serde::{Deserialize, Serialize};
-    use trussed::{types::KeyId, Error};
+    use trussed_core::{types::KeyId, Error};
 
     use super::*;
 
@@ -145,7 +145,7 @@ pub type WrapKeyToFileResult<'a, R, C> = ExtensionResult<'a, WrapKeyToFileExtens
 pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
     /// Wrap a key to a file
     /// This enables wrapping keys that don't fit in the buffers used by
-    /// [`write_file`](trussed::client::FilesystemClient::write_file) and [`read_file`](trussed::client::FilesystemClient::read_file)
+    /// [`write_file`](trussed_core::FilesystemClient::write_file) and [`read_file`](trussed_core::FilesystemClient::read_file)
     fn wrap_key_to_file(
         &mut self,
         mechanism: Mechanism,
@@ -169,7 +169,7 @@ pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
 
     /// Wrap a key to a file
     /// This enables wrapping keys that don't fit in the buffers used by
-    /// [`write_file`](trussed::client::FilesystemClient::write_file) and [`read_file`](trussed::client::FilesystemClient::read_file)
+    /// [`write_file`](trussed_core::FilesystemClient::write_file) and [`read_file`](trussed_core::FilesystemClient::read_file)
     fn unwrap_key_from_file(
         &mut self,
         mechanism: Mechanism,

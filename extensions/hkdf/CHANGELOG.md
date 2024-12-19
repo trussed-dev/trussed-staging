@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/hkdf-v0.2.0...HEAD
 
--
+- Replace `trussed` dependency with `trussed-core`.
 
 ## [0.2.0][] - 2024-03-25
 

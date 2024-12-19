@@ -10,5 +10,6 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+littlefs2-core.workspace = true
 serde.workspace = true
-trussed.workspace = true
+trussed-core.workspace = true

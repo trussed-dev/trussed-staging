@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
--
+- Replace `trussed` dependency with `trussed-core`.
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/wrap-key-to-file-v0.1.0...HEAD
 

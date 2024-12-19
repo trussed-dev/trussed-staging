@@ -5,10 +5,10 @@
 #![warn(non_ascii_idents, trivial_casts, unused, unused_qualifications)]
 #![deny(unsafe_code)]
 
+use littlefs2_core::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use trussed::{
+use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
-    types::{Path, PathBuf},
     Error,
 };
 

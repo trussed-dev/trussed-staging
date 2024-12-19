@@ -11,9 +11,9 @@
 use serde::{Deserialize, Serialize};
 use serde_byte_array::ByteArray;
 
-use trussed::serde_extensions::{Extension, ExtensionClient, ExtensionResult};
-use trussed::types::{KeyId, Location, Message, PathBuf, ShortData};
-use trussed::Error;
+use trussed_core::serde_extensions::{Extension, ExtensionClient, ExtensionResult};
+use trussed_core::types::{KeyId, Location, Message, PathBuf, ShortData};
+use trussed_core::Error;
 
 #[derive(Deserialize, Serialize)]
 pub enum HpkeRequest {

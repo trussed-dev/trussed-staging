@@ -11,5 +11,5 @@ license.workspace = true
 
 [dependencies]
 serde.workspace = true
-trussed.workspace = true
+trussed-core.workspace = true
 serde-byte-array = "0.1.2"

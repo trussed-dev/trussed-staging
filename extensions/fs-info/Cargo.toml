@@ -12,4 +12,4 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 serde-byte-array.workspace = true
-trussed.workspace = true
+trussed-core.workspace = true

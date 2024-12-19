@@ -6,7 +6,7 @@
 #![deny(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
-use trussed::{
+use trussed_core::{
     config::MAX_MEDIUM_DATA_LENGTH,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Bytes, KeyId, Location, Message},

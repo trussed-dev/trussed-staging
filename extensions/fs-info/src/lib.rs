@@ -6,7 +6,7 @@
 #![deny(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
-use trussed::{
+use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::Location,
     Error,

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use serde_byte_array::ByteArray;
-use trussed::{
+use trussed_core::{
     syscall, try_syscall,
     types::{KeyId, Location, Message, PathBuf, UserAttribute},
     Error,

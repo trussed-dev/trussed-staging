@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-#![cfg(all(feature = "virt", feature = "manage"))]
+#![cfg(all(feature = "virt", feature = "hkdf"))]
 
 use hex_literal::hex;
 use hkdf::Hkdf;

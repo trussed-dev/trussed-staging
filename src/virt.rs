@@ -175,7 +175,7 @@ impl ExtensionDispatch for Dispatcher {
                 )
             }
 
-            #[cfg(feature = "chunked")]
+            #[cfg(feature = "hkdf")]
             ExtensionIds::Hkdf => ExtensionImpl::<HkdfExtension>::extension_request_serialized(
                 &mut self.backend,
                 &mut ctx.core,
