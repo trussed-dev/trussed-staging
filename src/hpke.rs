@@ -491,8 +491,8 @@ mod tests {
     use super::*;
 
     struct TestRng<'a>(&'a [u8]);
-    impl<'a> CryptoRng for TestRng<'a> {}
-    impl<'a> RngCore for TestRng<'a> {
+    impl CryptoRng for TestRng<'_> {}
+    impl RngCore for TestRng<'_> {
         fn next_u32(&mut self) -> u32 {
             let (value, rem) = self.0.split_first_chunk().unwrap();
             self.0 = rem;
