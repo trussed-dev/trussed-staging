@@ -13,7 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.2...HEAD
 
--
+- Update extensions:
+  - `trussed-chunked` v0.2.0
+  - `trussed-hkdf` v0.3.0
+  - `trussed-hpke` v0.2.0
+  - `trussed-manage` v0.2.0
+  - `trussed-wrap-key-to-file` v0.2.0
+  - `trussed-fs-info` v0.2.0
 
 ## [0.3.2][] - 2024-10-18
 
