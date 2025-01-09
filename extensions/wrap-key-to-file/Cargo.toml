@@ -4,6 +4,7 @@
 [package]
 name = "trussed-wrap-key-to-file"
 version = "0.2.0"
+description = "extension for wrapping large keys to the filesystem with trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

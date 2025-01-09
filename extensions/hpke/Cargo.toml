@@ -4,6 +4,7 @@
 [package]
 name = "trussed-hpke"
 version = "0.2.0"
+description = "HPKE extension for trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

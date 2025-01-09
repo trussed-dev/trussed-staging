@@ -4,6 +4,7 @@
 [package]
 name = "trussed-hkdf"
 version = "0.3.0"
+description = "HKDF extension for trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

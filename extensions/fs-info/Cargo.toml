@@ -4,6 +4,7 @@
 [package]
 name = "trussed-fs-info"
 version = "0.2.0"
+description = "extension providing filesystem metadata for trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

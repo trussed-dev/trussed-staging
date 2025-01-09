@@ -4,6 +4,7 @@
 [package]
 name = "trussed-manage"
 version = "0.2.0"
+description = "management extension for trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

@@ -4,6 +4,7 @@
 [package]
 name = "trussed-chunked"
 version = "0.2.0"
+description = "extension with chunked file operations for trussed"
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true
