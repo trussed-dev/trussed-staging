@@ -79,12 +79,12 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 let read_state = match &mut backend_ctx.chunked_io_state {
                     Some(ChunkedIoState::Read(read_state)) => read_state,
                     Some(ChunkedIoState::EncryptedRead(_)) => {
-                        return read_encrypted_chunk(store, client_id, backend_ctx)
+                        return read_encrypted_chunk(&store, client_id, backend_ctx)
                     }
                     _ => return Err(Error::MechanismNotAvailable),
                 };
                 let (data, len) = store::filestore_read_chunk(
-                    store,
+                    &store,
                     client_id,
                     &read_state.path,
                     read_state.location,
@@ -96,9 +96,9 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 Ok(reply::ReadChunk { data, len }.into())
             }
             ChunkedRequest::StartChunkedRead(request) => {
-                clear_chunked_state(store, client_id, backend_ctx)?;
+                clear_chunked_state(&store, client_id, backend_ctx)?;
                 let (data, len) = store::filestore_read_chunk(
-                    store,
+                    &store,
                     client_id,
                     &request.path,
                     request.location,
@@ -114,9 +114,9 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
             ChunkedRequest::WriteChunk(request) => {
                 let is_last = !request.data.is_full();
                 if is_last {
-                    write_last_chunk(store, client_id, backend_ctx, &request.data)?;
+                    write_last_chunk(&store, client_id, backend_ctx, &request.data)?;
                 } else {
-                    write_chunk(store, client_id, backend_ctx, &request.data)?;
+                    write_chunk(&store, client_id, backend_ctx, &request.data)?;
                 }
                 Ok(reply::WriteChunk {}.into())
             }
@@ -126,7 +126,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     return Ok(reply::AbortChunkedWrite { aborted: false }.into());
                 };
                 let aborted = store::abort_chunked_write(
-                    store,
+                    &store,
                     client_id,
                     &write_state.path,
                     write_state.location,
@@ -138,12 +138,18 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     path: request.path.clone(),
                     location: request.location,
                 }));
-                store::start_chunked_write(store, client_id, &request.path, request.location, &[])?;
+                store::start_chunked_write(
+                    &store,
+                    client_id,
+                    &request.path,
+                    request.location,
+                    &[],
+                )?;
                 Ok(reply::StartChunkedWrite {}.into())
             }
             ChunkedRequest::PartialReadFile(request) => {
                 let (data, file_length) = store::partial_read_file(
-                    store,
+                    &store,
                     client_id,
                     &request.path,
                     request.location,
@@ -154,7 +160,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
             }
             ChunkedRequest::AppendFile(request) => {
                 let file_length = store::append_file(
-                    store,
+                    &store,
                     client_id,
                     &request.path,
                     request.location,
@@ -163,7 +169,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 Ok(reply::AppendFile { file_length }.into())
             }
             ChunkedRequest::StartEncryptedChunkedWrite(request) => {
-                clear_chunked_state(store, client_id, backend_ctx)?;
+                clear_chunked_state(&store, client_id, backend_ctx)?;
                 let key = keystore.load_key(
                     Secrecy::Secret,
                     Some(Kind::Symmetric(CHACHA8_KEY_LEN)),
@@ -179,7 +185,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 let aead = ChaCha8Poly1305::new((&*key.material).into());
                 let encryptor = EncryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 store::start_chunked_write(
-                    store,
+                    &store,
                     client_id,
                     &request.path,
                     request.location,
@@ -194,7 +200,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 Ok(reply::StartEncryptedChunkedWrite {}.into())
             }
             ChunkedRequest::StartEncryptedChunkedRead(request) => {
-                clear_chunked_state(store, client_id, backend_ctx)?;
+                clear_chunked_state(&store, client_id, backend_ctx)?;
                 let key = keystore.load_key(
                     Secrecy::Secret,
                     Some(Kind::Symmetric(CHACHA8_KEY_LEN)),
@@ -220,7 +226,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
 }
 
 fn clear_chunked_state(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
 ) -> Result<(), Error> {
@@ -240,7 +246,7 @@ fn clear_chunked_state(
 }
 
 fn write_chunk(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
     data: &Message,
@@ -279,7 +285,7 @@ fn write_chunk(
 }
 
 fn write_last_chunk(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
     data: &Message,
@@ -321,7 +327,7 @@ fn write_last_chunk(
 }
 
 fn read_encrypted_chunk(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
 ) -> Result<ChunkedReply, Error> {

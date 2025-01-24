@@ -58,7 +58,7 @@ trussed-fs-info = { version = "0.2.0", optional = true }
 [dev-dependencies]
 hex-literal = "0.4.0"
 hmac = "0.12.0"
-trussed = { version = "0.1.0", default-features = false, features = ["aes256-cbc", "clients-2", "crypto-client", "filesystem-client", "hmac-sha256", "virt", "x255"] }
+trussed = { version = "0.1.0", default-features = false, features = ["aes256-cbc", "crypto-client", "filesystem-client", "hmac-sha256", "virt", "x255"] }
 
 [features]
 default = []
@@ -82,7 +82,7 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "6bba8fde36d05c0227769eb63345744e87d84b2b" }
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "5003249c3187dca841f83551ba625921611a5ace" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }

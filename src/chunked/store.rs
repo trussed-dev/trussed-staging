@@ -54,7 +54,7 @@ pub fn fs_read_chunk<const N: usize>(
 /// Reads contents from path in location of store.
 #[inline(never)]
 pub fn read_chunk<const N: usize>(
-    store: impl Store,
+    store: &impl Store,
     location: Location,
     path: &Path,
     pos: OpenSeekFrom,
@@ -83,7 +83,7 @@ pub fn fs_write_chunk(
 /// Writes contents to path in location of store.
 #[inline(never)]
 pub fn write_chunk(
-    store: impl Store,
+    store: &impl Store,
     location: Location,
     path: &Path,
     contents: &[u8],
@@ -95,7 +95,7 @@ pub fn write_chunk(
 }
 
 pub fn move_file(
-    store: impl Store,
+    store: &impl Store,
     from_location: Location,
     from_path: &Path,
     to_location: Location,
@@ -182,7 +182,7 @@ fn actual_path(client_id: &Path, client_path: &Path) -> Result<PathBuf, Error> {
 }
 
 pub fn start_chunked_write(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,
@@ -193,7 +193,7 @@ pub fn start_chunked_write(
 }
 
 pub fn filestore_write_chunk(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &Path,
     location: Location,
@@ -204,7 +204,7 @@ pub fn filestore_write_chunk(
 }
 
 pub fn filestore_read_chunk<const N: usize>(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,
@@ -216,7 +216,7 @@ pub fn filestore_read_chunk<const N: usize>(
 }
 
 pub fn abort_chunked_write(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,
@@ -228,7 +228,7 @@ pub fn abort_chunked_write(
 }
 
 pub fn flush_chunks(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,
@@ -245,7 +245,7 @@ pub fn flush_chunks(
 }
 
 pub fn partial_read_file(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,
@@ -259,7 +259,7 @@ pub fn partial_read_file(
 }
 
 pub fn append_file(
-    store: impl Store,
+    store: &impl Store,
     client_id: &Path,
     path: &PathBuf,
     location: Location,

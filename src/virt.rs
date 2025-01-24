@@ -220,12 +220,11 @@ use trussed::{
     Error, Platform,
 };
 
-pub type Client<S, D = Dispatcher> = virt::Client<S, D>;
-pub type MultiClient<S, D = Dispatcher> = virt::MultiClient<S, D>;
+pub type Client<'a, D = Dispatcher> = virt::Client<'a, D>;
 
 pub fn with_client<S, R, F>(store: S, client_id: &str, f: F) -> R
 where
-    F: FnOnce(Client<S>) -> R,
+    F: FnOnce(Client) -> R,
     S: StoreProvider,
 {
     virt::with_platform(store, |platform| {
@@ -249,7 +248,7 @@ pub fn with_client_and_preserve<S, R, F>(
     should_preserve_file: fn(&Path, location: Location) -> bool,
 ) -> R
 where
-    F: FnOnce(Client<S>) -> R,
+    F: FnOnce(Client) -> R,
     S: StoreProvider,
 {
     let mut dispatcher = Dispatcher::default();
@@ -276,7 +275,7 @@ pub fn with_clients_and_preserve<S, R, F, const N: usize>(
     should_preserve_file: fn(&Path, location: Location) -> bool,
 ) -> R
 where
-    F: FnOnce([MultiClient<S>; N]) -> R,
+    F: FnOnce([Client; N]) -> R,
     S: StoreProvider,
 {
     let mut dispatcher = Dispatcher::default();
@@ -299,7 +298,7 @@ where
 
 pub fn with_fs_client<P, R, F>(internal: P, client_id: &str, f: F) -> R
 where
-    F: FnOnce(Client<Filesystem>) -> R,
+    F: FnOnce(Client) -> R,
     P: Into<PathBuf>,
 {
     with_client(Filesystem::new(internal), client_id, f)
@@ -307,7 +306,7 @@ where
 
 pub fn with_ram_client<R, F>(client_id: &str, f: F) -> R
 where
-    F: FnOnce(Client<Ram>) -> R,
+    F: FnOnce(Client) -> R,
 {
     with_client(Ram::default(), client_id, f)
 }
@@ -319,7 +318,7 @@ pub fn with_ram_client_and_preserve<R, F>(
     f: F,
 ) -> R
 where
-    F: FnOnce(Client<Ram>) -> R,
+    F: FnOnce(Client) -> R,
 {
     with_client_and_preserve(Ram::default(), client_id, f, should_preserve_file)
 }
@@ -331,7 +330,7 @@ pub fn with_ram_clients_and_preserve<R, F, const N: usize>(
     f: F,
 ) -> R
 where
-    F: FnOnce([MultiClient<Ram>; N]) -> R,
+    F: FnOnce([Client; N]) -> R,
 {
     with_clients_and_preserve(Ram::default(), client_ids, f, should_preserve_file)
 }
