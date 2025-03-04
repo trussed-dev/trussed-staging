@@ -212,20 +212,18 @@ impl ExtensionDispatch for Dispatcher {
     }
 }
 
-use std::path::PathBuf;
 use trussed::{
     backend::{Backend, BackendId},
     serde_extensions::*,
-    virt::{self, Filesystem, Ram, StoreProvider},
+    virt::{self, StoreConfig},
     Error, Platform,
 };
 
 pub type Client<'a, D = Dispatcher> = virt::Client<'a, D>;
 
-pub fn with_client<S, R, F>(store: S, client_id: &str, f: F) -> R
+pub fn with_client<R, F>(store: StoreConfig, client_id: &str, f: F) -> R
 where
     F: FnOnce(Client) -> R,
-    S: StoreProvider,
 {
     virt::with_platform(store, |platform| {
         platform.run_client_with_backends(
@@ -241,15 +239,14 @@ where
 }
 
 #[cfg(feature = "manage")]
-pub fn with_client_and_preserve<S, R, F>(
-    store: S,
+pub fn with_client_and_preserve<R, F>(
+    store: StoreConfig,
     client_id: &str,
     f: F,
     should_preserve_file: fn(&Path, location: Location) -> bool,
 ) -> R
 where
     F: FnOnce(Client) -> R,
-    S: StoreProvider,
 {
     let mut dispatcher = Dispatcher::default();
     dispatcher.backend.manage.should_preserve_file = should_preserve_file;
@@ -268,15 +265,14 @@ where
 }
 
 #[cfg(feature = "manage")]
-pub fn with_clients_and_preserve<S, R, F, const N: usize>(
-    store: S,
+pub fn with_clients_and_preserve<R, F, const N: usize>(
+    store: StoreConfig,
     client_ids: [&str; N],
-    f: F,
     should_preserve_file: fn(&Path, location: Location) -> bool,
+    f: F,
 ) -> R
 where
     F: FnOnce([Client; N]) -> R,
-    S: StoreProvider,
 {
     let mut dispatcher = Dispatcher::default();
     dispatcher.backend.manage.should_preserve_file = should_preserve_file;
@@ -294,43 +290,4 @@ where
     virt::with_platform(store, |platform| {
         platform.run_clients_with_backends(clients_backend, dispatcher, f)
     })
-}
-
-pub fn with_fs_client<P, R, F>(internal: P, client_id: &str, f: F) -> R
-where
-    F: FnOnce(Client) -> R,
-    P: Into<PathBuf>,
-{
-    with_client(Filesystem::new(internal), client_id, f)
-}
-
-pub fn with_ram_client<R, F>(client_id: &str, f: F) -> R
-where
-    F: FnOnce(Client) -> R,
-{
-    with_client(Ram::default(), client_id, f)
-}
-
-#[cfg(feature = "manage")]
-pub fn with_ram_client_and_preserve<R, F>(
-    client_id: &str,
-    should_preserve_file: fn(&Path, location: Location) -> bool,
-    f: F,
-) -> R
-where
-    F: FnOnce(Client) -> R,
-{
-    with_client_and_preserve(Ram::default(), client_id, f, should_preserve_file)
-}
-
-#[cfg(feature = "manage")]
-pub fn with_ram_clients_and_preserve<R, F, const N: usize>(
-    client_ids: [&str; N],
-    should_preserve_file: fn(&Path, location: Location) -> bool,
-    f: F,
-) -> R
-where
-    F: FnOnce([Client; N]) -> R,
-{
-    with_clients_and_preserve(Ram::default(), client_ids, f, should_preserve_file)
 }

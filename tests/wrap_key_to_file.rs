@@ -10,8 +10,9 @@ use trussed::types::{
     KeyId, KeySerialization, Location::*, Mechanism, PathBuf, SignatureSerialization,
     StorageAttributes,
 };
+use trussed::virt::StoreConfig;
 
-use trussed_staging::virt::with_ram_client;
+use trussed_staging::virt::with_client;
 
 use trussed_wrap_key_to_file::WrapKeyToFileClient;
 
@@ -35,7 +36,7 @@ fn assert_key_eq(key1: KeyId, key2: KeyId, client: &mut impl CryptoClient) {
 
 #[test]
 fn chacha_wrapkey() {
-    with_ram_client("staging-tests", |mut client| {
+    with_client(StoreConfig::ram(), "staging-tests", |mut client| {
         let client = &mut client;
         // Way to get a compatible Symmetric32 key
         let key = syscall!(client.unsafe_inject_key(
@@ -91,7 +92,7 @@ fn chacha_wrapkey() {
 
 #[test]
 fn chacha_wraptofile() {
-    with_ram_client("staging-tests", |mut client| {
+    with_client(StoreConfig::ram(), "staging-tests", |mut client| {
         let client = &mut client;
         // Way to get a compatible Symmetric32 key
         let key = syscall!(client.unsafe_inject_key(

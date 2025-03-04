@@ -8,6 +8,7 @@ use trussed::client::{CryptoClient, X255};
 use trussed::{
     syscall,
     types::{Bytes, KeyId, Location, Mechanism, SignatureSerialization},
+    virt::StoreConfig,
 };
 
 use trussed_hpke::HpkeClient;
@@ -35,7 +36,7 @@ fn assert_symkey_eq<C: CryptoClient>(this: KeyId, other: KeyId, client: &mut C) 
 
 #[test]
 fn hpke_message() {
-    virt::with_ram_client("hpke_test_message", |mut client| {
+    virt::with_client(StoreConfig::ram(), "hpke_test_message", |mut client| {
         let secret_key = syscall!(client.generate_x255_secret_key(Location::Volatile)).key;
         let public_key =
             syscall!(client.derive_x255_public_key(secret_key, Location::Volatile)).key;
@@ -61,7 +62,7 @@ fn hpke_message() {
 
 #[test]
 fn hpke_wrap_key() {
-    virt::with_ram_client("hpke_test_wrap_key", |mut client| {
+    virt::with_client(StoreConfig::ram(), "hpke_test_wrap_key", |mut client| {
         let secret_key = syscall!(client.generate_x255_secret_key(Location::Volatile)).key;
         let public_key =
             syscall!(client.derive_x255_public_key(secret_key, Location::Volatile)).key;
@@ -84,36 +85,40 @@ fn hpke_wrap_key() {
 
 #[test]
 fn hpke_wrap_key_to_file() {
-    virt::with_ram_client("hpke_test_wrap_key_to_file", |mut client| {
-        let secret_key = syscall!(client.generate_x255_secret_key(Location::Volatile)).key;
-        let public_key =
-            syscall!(client.derive_x255_public_key(secret_key, Location::Volatile)).key;
+    virt::with_client(
+        StoreConfig::ram(),
+        "hpke_test_wrap_key_to_file",
+        |mut client| {
+            let secret_key = syscall!(client.generate_x255_secret_key(Location::Volatile)).key;
+            let public_key =
+                syscall!(client.derive_x255_public_key(secret_key, Location::Volatile)).key;
 
-        let key_to_wrap = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
+            let key_to_wrap = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
 
-        let path = path!("WRAPPED_KEY");
-        let aad = Bytes::from_slice(b"AAD").unwrap();
-        let info = Bytes::from_slice(b"INFO").unwrap();
-        syscall!(client.hpke_seal_key_to_file(
-            path.into(),
-            Location::Volatile,
-            public_key,
-            key_to_wrap,
-            aad.clone(),
-            info.clone()
-        ));
+            let path = path!("WRAPPED_KEY");
+            let aad = Bytes::from_slice(b"AAD").unwrap();
+            let info = Bytes::from_slice(b"INFO").unwrap();
+            syscall!(client.hpke_seal_key_to_file(
+                path.into(),
+                Location::Volatile,
+                public_key,
+                key_to_wrap,
+                aad.clone(),
+                info.clone()
+            ));
 
-        let unwrapped = syscall!(client.hpke_open_key_from_file(
-            secret_key,
-            path.into(),
-            Location::Volatile,
-            Location::Volatile,
-            aad,
-            info
-        ))
-        .key;
-        assert_ne!(unwrapped, key_to_wrap);
+            let unwrapped = syscall!(client.hpke_open_key_from_file(
+                secret_key,
+                path.into(),
+                Location::Volatile,
+                Location::Volatile,
+                aad,
+                info
+            ))
+            .key;
+            assert_ne!(unwrapped, key_to_wrap);
 
-        assert_symkey_eq(key_to_wrap, unwrapped, &mut client);
-    })
+            assert_symkey_eq(key_to_wrap, unwrapped, &mut client);
+        },
+    )
 }

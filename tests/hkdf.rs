@@ -11,6 +11,7 @@ use trussed::{
     client::HmacSha256,
     syscall,
     types::{Bytes, Location},
+    virt::StoreConfig,
 };
 use trussed_hkdf::{HkdfClient, KeyOrData::*};
 use trussed_staging::virt;
@@ -27,7 +28,7 @@ fn hkdf() {
     ref_hkdf.expand(INFO, &mut okm).unwrap();
     let mut mac = Hmac::<Sha256>::new_from_slice(&okm).unwrap();
     mac.update(MSG);
-    virt::with_ram_client("hkdf_test", |mut client| {
+    virt::with_client(StoreConfig::ram(), "hkdf_test", |mut client| {
         let prk = syscall!(client.hkdf_extract(
             Data(Bytes::from_slice(IKM).unwrap()),
             Some(Data(Bytes::from_slice(SALT).unwrap())),

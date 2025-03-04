@@ -7,8 +7,9 @@ use littlefs2_core::path;
 use trussed::client::FilesystemClient;
 use trussed::syscall;
 use trussed::types::{Bytes, Location, Path};
+use trussed::virt::StoreConfig;
 use trussed_manage::ManageClient;
-use trussed_staging::virt::with_ram_clients_and_preserve;
+use trussed_staging::virt::with_clients_and_preserve;
 
 fn should_preserve(path: &Path, location: Location) -> bool {
     (location == Location::Internal && path == path!("/client1/dat/to_save_internal"))
@@ -18,7 +19,8 @@ fn should_preserve(path: &Path, location: Location) -> bool {
 
 #[test]
 fn device_factory_reset() {
-    with_ram_clients_and_preserve(
+    with_clients_and_preserve(
+        StoreConfig::ram(),
         ["client1", "client2"],
         should_preserve,
         |[mut client1, mut client2]| {
@@ -130,7 +132,8 @@ fn device_factory_reset() {
 
 #[test]
 fn client_factory_reset() {
-    with_ram_clients_and_preserve(
+    with_clients_and_preserve(
+        StoreConfig::ram(),
         ["client1", "client2"],
         should_preserve,
         |[mut client1, mut client2]| {

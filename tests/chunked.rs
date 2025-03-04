@@ -4,12 +4,14 @@
 #![cfg(all(feature = "virt", feature = "chunked"))]
 
 use littlefs2_core::{path, PathBuf};
-use trussed::{client::FilesystemClient, syscall, try_syscall, types::Location, Bytes};
+use trussed::{
+    client::FilesystemClient, syscall, try_syscall, types::Location, virt::StoreConfig, Bytes,
+};
 use trussed_chunked::{utils, ChunkedClient};
-use trussed_staging::virt::with_ram_client;
+use trussed_staging::virt::with_client;
 
 fn test_write_all(location: Location) {
-    with_ram_client("test chunked", |mut client| {
+    with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let path = PathBuf::from(path!("foo"));
         utils::write_all(&mut client, location, path.clone(), &[48; 1234], None, None).unwrap();
 
@@ -21,7 +23,7 @@ fn test_write_all(location: Location) {
 }
 
 fn test_write_all_small(location: Location) {
-    with_ram_client("test chunked", |mut client| {
+    with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let path = PathBuf::from(path!("foo2"));
         utils::write_all(&mut client, location, path.clone(), &[48; 1023], None, None).unwrap();
 
@@ -50,7 +52,7 @@ fn write_all_internal() {
 
 #[test]
 fn filesystem() {
-    with_ram_client("chunked-tests", |mut client| {
+    with_client(StoreConfig::ram(), "chunked-tests", |mut client| {
         assert!(syscall!(
             client.entry_metadata(Location::Internal, PathBuf::from(path!("test_file")))
         )

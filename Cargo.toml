@@ -83,7 +83,7 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "5003249c3187dca841f83551ba625921611a5ace" }
+trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "ac106d63ab5e19021b0e37f0efb4313f8168a110" }
 
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }

@@ -6,17 +6,17 @@
 use littlefs2_core::{path, PathBuf};
 use serde_byte_array::ByteArray;
 use trussed::{
-    client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location, Bytes,
-    Error,
+    client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location,
+    virt::StoreConfig, Bytes, Error,
 };
 use trussed_chunked::{
     utils::{self, EncryptionData},
     ChunkedClient,
 };
-use trussed_staging::virt::with_ram_client;
+use trussed_staging::virt::with_client;
 
 fn test_write_all(location: Location) {
-    with_ram_client("test chunked", |mut client| {
+    with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
         let path = PathBuf::from(path!("foo"));
         utils::write_all(
@@ -38,7 +38,7 @@ fn test_write_all(location: Location) {
 }
 
 fn test_write_all_small(location: Location) {
-    with_ram_client("test chunked", |mut client| {
+    with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
         let path = PathBuf::from(path!("foo2"));
         utils::write_all(
@@ -77,7 +77,7 @@ fn write_all_internal() {
 
 #[test]
 fn encrypted_filesystem() {
-    with_ram_client("chunked-tests", |mut client| {
+    with_client(StoreConfig::ram(), "chunked-tests", |mut client| {
         let path = PathBuf::from(path!("test_file"));
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
 
