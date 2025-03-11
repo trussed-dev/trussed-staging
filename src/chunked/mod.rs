@@ -182,7 +182,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 });
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
                     (&nonce).into();
-                let aead = ChaCha8Poly1305::new((&*key.material).into());
+                let aead = ChaCha8Poly1305::new(key.material.as_slice().into());
                 let encryptor = EncryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 store::start_chunked_write(
                     &store,
@@ -210,7 +210,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                     filestore.read(&request.path, request.location)?;
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
                     (&**nonce).into();
-                let aead = ChaCha8Poly1305::new((&*key.material).into());
+                let aead = ChaCha8Poly1305::new(key.material.as_slice().into());
                 let decryptor = DecryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 backend_ctx.chunked_io_state =
                     Some(ChunkedIoState::EncryptedRead(EncryptedChunkedReadState {
