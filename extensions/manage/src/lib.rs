@@ -5,7 +5,7 @@
 #![warn(non_ascii_idents, trivial_casts, unused, unused_qualifications)]
 #![deny(unsafe_code)]
 
-use littlefs2_core::{Path, PathBuf};
+use littlefs2_core::{path, Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
@@ -145,3 +145,9 @@ pub trait ManageClient: ExtensionClient<ManageExtension> {
 }
 
 impl<C: ExtensionClient<ManageExtension>> ManageClient for C {}
+
+/// Empty file written to mark that a file system should be reformatted
+///
+/// When booting, if this file is written to a filesystem, it means that the previous
+/// power cycle was caused by a factory reset and the storage should be reformatted
+pub const FACTORY_RESET_MARKER_FILE: &Path = path!("/factory-reset-must-reformat");

@@ -11,6 +11,7 @@ use trussed::{
 use trussed_manage::{
     FactoryResetClientReply, FactoryResetClientRequest, FactoryResetDeviceReply,
     FactoryResetDeviceRequest, ManageExtension, ManageReply, ManageRequest,
+    FACTORY_RESET_MARKER_FILE,
 };
 
 use crate::StagingBackend;
@@ -61,16 +62,34 @@ impl ExtensionImpl<ManageExtension> for StagingBackend {
                 let store = platform.store();
 
                 for location in [Location::Internal, Location::External, Location::Volatile] {
-                    store
-                        .fs(location)
-                        .remove_dir_all_where(
-                            path!("/"),
-                            &callback(self.manage.should_preserve_file, location),
-                        )
-                        .map_err(|_err| {
-                            debug!("Failed to delete {location:?} fs: {_err:?}");
-                            Error::FunctionFailed
-                        })?;
+                    let fs = store.fs(location);
+                    fs.remove_dir_all_where(
+                        path!("/"),
+                        &callback(self.manage.should_preserve_file, location),
+                    )
+                    .map_err(|_err| {
+                        debug!("Failed to delete {location:?} fs: {_err:?}");
+                        Error::FunctionFailed
+                    })?;
+                    if location == Location::External {
+                        let is_empty = fs
+                            .read_dir_and_then(path!("/"), &mut |dir| match dir.next() {
+                                Some(Ok(_)) => Ok(false),
+                                Some(Err(err)) => Err(err),
+                                None => Ok(true),
+                            })
+                            .map_err(|_err| {
+                                debug!("Failed to check emptyness {location:?} fs: {_err:?}");
+                                Error::FunctionFailed
+                            })?;
+                        if is_empty {
+                            fs.write(FACTORY_RESET_MARKER_FILE, &[])
+                            .map_err(|_err| {
+                                debug!("Failed to write reformat instruction for {location:?} fs: {_err:?}");
+                                Error::FunctionFailed
+                            })?;
+                        }
+                    }
                 }
                 Ok(ManageReply::FactoryResetDevice(FactoryResetDeviceReply))
             }
