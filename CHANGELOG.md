@@ -11,10 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.3...HEAD
+
+## [0.3.3][] - 2025-05-13
+
+[0.3.3]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.2...v0.3.3
+
+- When factory-resetting, mark empty filesystems for reformatting ([#36](https://github.com/trussed-dev/trussed-staging/pull/36))
 
 - Update extensions:
-  - `trussed-chunked` v0.2.0
+  - `trussed-chunked` v0.2.1
   - `trussed-hkdf` v0.3.0
   - `trussed-hpke` v0.2.0
   - `trussed-manage` v0.2.0
