@@ -7,9 +7,9 @@
 
 use serde::{Deserialize, Serialize};
 use trussed_core::{
+    error::Error,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::Location,
-    Error,
 };
 
 pub struct FsInfoExtension;

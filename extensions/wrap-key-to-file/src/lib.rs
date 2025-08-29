@@ -7,9 +7,9 @@
 
 use serde::{Deserialize, Serialize};
 use trussed_core::{
+    client::ClientError,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Bytes, KeyId, Location, Mechanism, PathBuf},
-    ClientError,
 };
 
 #[derive(Debug, Default)]
@@ -25,8 +25,8 @@ pub enum WrapKeyToFileRequest {
 pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
+    use trussed_core::error::Error;
     use trussed_core::types::{KeyId, Location, Mechanism, Message, PathBuf};
-    use trussed_core::Error;
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct WrapKeyToFile {
@@ -90,7 +90,7 @@ pub enum WrapKeyToFileReply {
 
 pub mod reply {
     use serde::{Deserialize, Serialize};
-    use trussed_core::{types::KeyId, Error};
+    use trussed_core::{error::Error, types::KeyId};
 
     use super::*;
 

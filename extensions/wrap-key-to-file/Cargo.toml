@@ -12,4 +12,4 @@ license.workspace = true
 
 [dependencies]
 serde.workspace = true
-trussed-core = { workspace = true, features = ["filesystem-client"] }
+trussed-core.workspace = true

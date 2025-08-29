@@ -3,9 +3,9 @@
 
 use serde_byte_array::ByteArray;
 use trussed_core::{
+    error::Error,
     syscall, try_syscall,
     types::{KeyId, Location, Message, PathBuf, UserAttribute},
-    Error,
 };
 
 use crate::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};

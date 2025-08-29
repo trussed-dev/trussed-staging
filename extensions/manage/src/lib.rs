@@ -8,8 +8,8 @@
 use littlefs2_core::{path, Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use trussed_core::{
+    error::Error,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
-    Error,
 };
 
 pub struct ManageExtension;
