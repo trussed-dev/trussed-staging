@@ -10,9 +10,9 @@ pub mod utils;
 use serde::{Deserialize, Serialize};
 use serde_byte_array::ByteArray;
 use trussed_core::{
-    client::FilesystemClient,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{KeyId, Location, Message, PathBuf, UserAttribute},
+    FilesystemClient,
 };
 
 pub const CHACHA8_STREAM_NONCE_LEN: usize = 8;
@@ -57,8 +57,8 @@ pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use serde_byte_array::ByteArray;
-    use trussed_core::error::Error;
     use trussed_core::types::{KeyId, Location, Message, PathBuf, UserAttribute};
+    use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {}
@@ -263,8 +263,8 @@ pub mod request {
 pub mod reply {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed_core::error::Error;
     use trussed_core::types::Message;
+    use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {

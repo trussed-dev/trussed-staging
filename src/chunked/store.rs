@@ -39,7 +39,7 @@ pub fn fs_read_chunk<const N: usize>(
     if length > contents.capacity() {
         return Err(Error::FilesystemReadFailure);
     }
-    contents.resize_default(length).unwrap();
+    contents.resize_zero(length).unwrap();
     let file_len = fs
         .open_file_and_then(path, &mut |file| {
             file.seek(pos.into())?;

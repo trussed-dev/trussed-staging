@@ -5,6 +5,7 @@ mod store;
 use store::OpenSeekFrom;
 
 use chacha20poly1305::{
+    aead,
     aead::stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31},
     ChaCha8Poly1305, KeyInit,
 };
@@ -26,6 +27,38 @@ use crate::StagingContext;
 
 const POLY1305_TAG_LEN: usize = 16;
 const CHACHA8_KEY_LEN: usize = 32;
+
+struct HeaplessBuffer<'a, LenT: heapless::LenType>(&'a mut heapless_bytes::BytesView<LenT>);
+
+impl<'a, LenT: heapless::LenType, S: heapless_bytes::BytesStorage + ?Sized>
+    From<&'a mut heapless_bytes::BytesInner<LenT, S>> for HeaplessBuffer<'a, LenT>
+{
+    fn from(value: &'a mut heapless_bytes::BytesInner<LenT, S>) -> Self {
+        Self(value.as_mut_view())
+    }
+}
+
+impl<'a, LenT: heapless::LenType> AsMut<[u8]> for HeaplessBuffer<'a, LenT> {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
+impl<'a, LenT: heapless::LenType> AsRef<[u8]> for HeaplessBuffer<'a, LenT> {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl<'a, LenT: heapless::LenType> aead::Buffer for HeaplessBuffer<'a, LenT> {
+    fn extend_from_slice(&mut self, other: &[u8]) -> aead::Result<()> {
+        self.0.extend_from_slice(other).map_err(|_| aead::Error)
+    }
+
+    fn truncate(&mut self, len: usize) {
+        self.0.truncate(len);
+    }
+}
 
 #[derive(Debug)]
 pub struct ChunkedReadState {
@@ -209,7 +242,7 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 let nonce: Bytes<CHACHA8_STREAM_NONCE_LEN> =
                     filestore.read(&request.path, request.location)?;
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
-                    (&**nonce).into();
+                    (&*nonce).into();
                 let aead = ChaCha8Poly1305::new((&*key.material).into());
                 let decryptor = DecryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 backend_ctx.chunked_io_state =
@@ -263,10 +296,13 @@ fn write_chunk(
         }
         Some(ChunkedIoState::EncryptedWrite(ref mut write_state)) => {
             let mut data =
-                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::from_slice(data).unwrap();
+                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
             write_state
                 .encryptor
-                .encrypt_next_in_place(write_state.path.as_ref().as_bytes(), &mut *data)
+                .encrypt_next_in_place(
+                    write_state.path.as_ref().as_bytes(),
+                    &mut HeaplessBuffer::from(&mut data),
+                )
                 .map_err(|_err| {
                     error!("Failed to encrypt {:?}", _err);
                     Error::AeadError
@@ -303,10 +339,13 @@ fn write_last_chunk(
         }
         Some(ChunkedIoState::EncryptedWrite(write_state)) => {
             let mut data =
-                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::from_slice(data).unwrap();
+                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
             write_state
                 .encryptor
-                .encrypt_last_in_place(&[write_state.location as u8], &mut *data)
+                .encrypt_last_in_place(
+                    &[write_state.location as u8],
+                    &mut HeaplessBuffer::from(&mut data),
+                )
                 .map_err(|_err| {
                     error!("Failed to encrypt {:?}", _err);
                     Error::AeadError
@@ -354,12 +393,15 @@ fn read_encrypted_chunk(
 
         read_state
             .decryptor
-            .decrypt_last_in_place(&[read_state.location as u8], &mut *data)
+            .decrypt_last_in_place(
+                &[read_state.location as u8],
+                &mut HeaplessBuffer::from(&mut data),
+            )
             .map_err(|_err| {
                 error!("Failed to decrypt {:?}", _err);
                 Error::AeadError
             })?;
-        let data = Bytes::from_slice(&data).expect("decryptor removes the tag");
+        let data = Bytes::try_from(&*data).expect("decryptor removes the tag");
         Ok(reply::ReadChunk {
             data,
             len: chunked_decrypted_len(len)?,
@@ -368,12 +410,15 @@ fn read_encrypted_chunk(
     } else {
         read_state
             .decryptor
-            .decrypt_next_in_place(read_state.path.as_ref().as_bytes(), &mut *data)
+            .decrypt_next_in_place(
+                read_state.path.as_ref().as_bytes(),
+                &mut HeaplessBuffer::from(&mut data),
+            )
             .map_err(|_err| {
                 error!("Failed to decrypt {:?}", _err);
                 Error::AeadError
             })?;
-        let data = Bytes::from_slice(&data).expect("decryptor removes the tag");
+        let data = Bytes::try_from(&*data).expect("decryptor removes the tag");
         Ok(reply::ReadChunk {
             data,
             len: chunked_decrypted_len(len)?,

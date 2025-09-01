@@ -3,9 +3,9 @@
 
 use serde_byte_array::ByteArray;
 use trussed_core::{
-    error::Error,
     syscall, try_syscall,
     types::{KeyId, Location, Message, PathBuf, UserAttribute},
+    Error,
 };
 
 use crate::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
@@ -27,7 +27,7 @@ pub fn write_all(
     user_attribute: Option<UserAttribute>,
     encryption: Option<EncryptionData>,
 ) -> Result<(), Error> {
-    if let (Ok(msg), None) = (Message::from_slice(data), encryption) {
+    if let (Ok(msg), None) = (Message::try_from(data), encryption) {
         // Fast path for small files
         try_syscall!(client.write_file(location, path, msg, user_attribute))?;
         Ok(())
@@ -63,7 +63,7 @@ fn write_chunked_inner(
     let msg = Message::new();
     let chunk_size = msg.capacity();
     let chunks = data.chunks(chunk_size).map(|chunk| {
-        Message::from_slice(chunk).expect("Iteration over chunks yields maximum of chunk_size")
+        Message::try_from(chunk).expect("Iteration over chunks yields maximum of chunk_size")
     });
     if let Some(encryption_data) = encryption {
         try_syscall!(client.start_encrypted_chunked_write(

@@ -367,7 +367,7 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 // TODO: need to check both secret and public keys
                 let serialized_key =
                     keystore.load_key(key::Secrecy::Secret, None, &req.key_to_seal)?;
-                let mut message = Message::from_slice(&serialized_key.serialize()).unwrap();
+                let mut message = Message::try_from(&*serialized_key.serialize()).unwrap();
 
                 let public_key = load_public_key(&req.public_key, keystore)?;
 
@@ -392,8 +392,8 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 // TODO: need to check both secret and public keys
                 let serialized_key =
                     keystore.load_key(key::Secrecy::Secret, None, &req.key_to_seal)?;
-                let mut message = Bytes::<{ MAX_SERIALIZED_KEY_LENGTH + 32 + 16 }>::from_slice(
-                    &serialized_key.serialize(),
+                let mut message = Bytes::<{ MAX_SERIALIZED_KEY_LENGTH + 32 + 16 }>::try_from(
+                    &*serialized_key.serialize(),
                 )
                 .unwrap();
 

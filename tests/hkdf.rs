@@ -30,14 +30,14 @@ fn hkdf() {
     mac.update(MSG);
     virt::with_client(StoreConfig::ram(), "hkdf_test", |mut client| {
         let prk = syscall!(client.hkdf_extract(
-            Data(Bytes::from_slice(IKM).unwrap()),
-            Some(Data(Bytes::from_slice(SALT).unwrap())),
+            Data(Bytes::try_from(IKM).unwrap()),
+            Some(Data(Bytes::try_from(SALT).unwrap())),
             Location::External,
         ))
         .okm;
         let expanded = syscall!(client.hkdf_expand(
             prk,
-            Bytes::from_slice(INFO).unwrap(),
+            Bytes::try_from(INFO).unwrap(),
             16,
             Location::Volatile
         ))

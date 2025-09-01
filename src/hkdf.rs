@@ -47,7 +47,7 @@ fn get_mat<S: Store>(
                 warn!("Attempt to HKDF on a private key");
                 return Err(Error::MechanismInvalid);
             }
-            Bytes::from_slice(&key_mat.material).map_err(|_| {
+            Bytes::try_from(&*key_mat.material).map_err(|_| {
                 warn!("Attempt to HKDF a too large key");
                 Error::InternalError
             })?
@@ -65,7 +65,7 @@ fn extract<S: Store>(
         .as_ref()
         .map(|s| get_mat(s, keystore))
         .transpose()?;
-    let salt_ref = salt.as_deref().map(|d| &**d);
+    let salt_ref = salt.as_deref().map(|d| &*d);
     let (prk, _) = Hkdf::<Sha256>::extract(salt_ref, &ikm);
     assert_eq!(prk.len(), 256 / 8);
     let key_id = keystore.store_key(
@@ -91,7 +91,7 @@ fn expand<S: Store>(
         Error::InternalError
     })?;
     let mut okm = ShortData::new();
-    okm.resize_default(req.len).map_err(|_| {
+    okm.resize_zero(req.len).map_err(|_| {
         error!("Attempt to run HKDF with too large output");
         Error::WrongMessageLength
     })?;

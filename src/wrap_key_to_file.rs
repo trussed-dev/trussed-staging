@@ -37,9 +37,9 @@ fn wrap_key_to_file(
 
     let serialized_key = keystore.load_key(Secrecy::Secret, None, &request.key)?;
 
-    let mut data = Bytes::<WRAPPED_TO_FILE_LEN>::from_slice(&serialized_key.serialize()).unwrap();
+    let mut data = Bytes::<WRAPPED_TO_FILE_LEN>::try_from(&*serialized_key.serialize()).unwrap();
     let material_len = data.len();
-    data.resize_default(material_len + NONCE_LEN).unwrap();
+    data.resize_zero(material_len + NONCE_LEN).unwrap();
     let (material, nonce) = data.split_at_mut(material_len);
     keystore.rng().fill_bytes(nonce);
     let nonce = (&*nonce).try_into().unwrap();

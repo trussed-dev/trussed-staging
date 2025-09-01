@@ -7,9 +7,9 @@
 
 use serde::{Deserialize, Serialize};
 use trussed_core::{
-    client::ClientError,
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
     types::{Bytes, KeyId, Location, Mechanism, PathBuf},
+    ClientError,
 };
 
 #[derive(Debug, Default)]
@@ -25,8 +25,8 @@ pub enum WrapKeyToFileRequest {
 pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed_core::error::Error;
     use trussed_core::types::{KeyId, Location, Mechanism, Message, PathBuf};
+    use trussed_core::Error;
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct WrapKeyToFile {
@@ -90,7 +90,7 @@ pub enum WrapKeyToFileReply {
 
 pub mod reply {
     use serde::{Deserialize, Serialize};
-    use trussed_core::{error::Error, types::KeyId};
+    use trussed_core::{types::KeyId, Error};
 
     use super::*;
 
@@ -156,7 +156,7 @@ pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
         associated_data: &[u8],
     ) -> WrapKeyToFileResult<'_, reply::WrapKeyToFile, Self> {
         let associated_data =
-            Bytes::from_slice(associated_data).map_err(|_| ClientError::DataTooLarge)?;
+            Bytes::try_from(associated_data).map_err(|_| ClientError::DataTooLarge)?;
         self.extension(request::WrapKeyToFile {
             mechanism,
             wrapping_key,
@@ -180,7 +180,7 @@ pub trait WrapKeyToFileClient: ExtensionClient<WrapKeyToFileExtension> {
         associated_data: &[u8],
     ) -> WrapKeyToFileResult<'_, reply::UnwrapKeyFromFile, Self> {
         let associated_data =
-            Bytes::from_slice(associated_data).map_err(|_| ClientError::DataTooLarge)?;
+            Bytes::try_from(associated_data).map_err(|_| ClientError::DataTooLarge)?;
         self.extension(request::UnwrapKeyFromFile {
             mechanism,
             key,

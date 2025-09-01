@@ -27,56 +27,56 @@ fn device_factory_reset() {
             syscall!(client1.write_file(
                 Location::Internal,
                 path!("to_save_internal").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::External,
                 path!("to_save_external").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::Volatile,
                 path!("to_save_volatile").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None
             ));
             syscall!(client1.write_file(
                 Location::Internal,
                 path!("to_delete_internal").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::External,
                 path!("to_delete_external").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::Volatile,
                 path!("to_delete_volatile").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None
             ));
 
             syscall!(client2.write_file(
                 Location::Internal,
                 path!("to_delete_internal").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::External,
                 path!("to_delete_external").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::Volatile,
                 path!("to_delete_volatile").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None
             ));
 
@@ -140,37 +140,37 @@ fn client_factory_reset() {
             syscall!(client1.write_file(
                 Location::Internal,
                 path!("to_save_internal").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::External,
                 path!("to_save_external").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client1.write_file(
                 Location::Volatile,
                 path!("to_save_volatile").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None
             ));
             syscall!(client2.write_file(
                 Location::Internal,
                 path!("to_delete_internal").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::External,
                 path!("to_delete_external").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None,
             ));
             syscall!(client2.write_file(
                 Location::Volatile,
                 path!("to_delete_volatile").into(),
-                Bytes::from_slice(b"data").unwrap(),
+                Bytes::try_from(b"data").unwrap(),
                 None
             ));
 
