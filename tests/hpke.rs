@@ -41,9 +41,9 @@ fn hpke_message() {
         let public_key =
             syscall!(client.derive_x255_public_key(secret_key, Location::Volatile)).key;
 
-        let pl = Bytes::try_from(b"Plaintext").unwrap();
-        let aad = Bytes::try_from(b"AAD").unwrap();
-        let info = Bytes::try_from(b"INFO").unwrap();
+        let pl = Bytes::from(b"Plaintext");
+        let aad = Bytes::from(b"AAD");
+        let info = Bytes::from(b"INFO");
         let seal = syscall!(client.hpke_seal(
             public_key,
             pl.clone(),
@@ -69,8 +69,8 @@ fn hpke_wrap_key() {
 
         let key_to_wrap = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
 
-        let aad = Bytes::try_from(b"AAD").unwrap();
-        let info = Bytes::try_from(b"INFO").unwrap();
+        let aad = Bytes::from(b"AAD");
+        let info = Bytes::from(b"INFO");
         let seal =
             syscall!(client.hpke_seal_key(public_key, key_to_wrap, aad.clone(), info.clone()));
 
@@ -96,8 +96,8 @@ fn hpke_wrap_key_to_file() {
             let key_to_wrap = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
 
             let path = path!("WRAPPED_KEY");
-            let aad = Bytes::try_from(b"AAD").unwrap();
-            let info = Bytes::try_from(b"INFO").unwrap();
+            let aad = Bytes::from(b"AAD");
+            let info = Bytes::from(b"INFO");
             syscall!(client.hpke_seal_key_to_file(
                 path.into(),
                 Location::Volatile,

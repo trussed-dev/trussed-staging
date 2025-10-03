@@ -40,13 +40,13 @@ impl<'a, LenT: heapless::LenType, S: heapless_bytes::BytesStorage + ?Sized>
 
 impl<'a, LenT: heapless::LenType> AsMut<[u8]> for HeaplessBuffer<'a, LenT> {
     fn as_mut(&mut self) -> &mut [u8] {
-        &mut self.0
+        self.0
     }
 }
 
 impl<'a, LenT: heapless::LenType> AsRef<[u8]> for HeaplessBuffer<'a, LenT> {
     fn as_ref(&self) -> &[u8] {
-        &self.0
+        self.0
     }
 }
 

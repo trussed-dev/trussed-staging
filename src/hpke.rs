@@ -122,6 +122,7 @@ trait Aead:
         TagSize = <ChaCha20Poly1305 as AeadCore>::TagSize,
     >
 {
+    // The AEAD_ID is the last 2 bytes of the X25519_HKDF_SHA256_SELF_HPKE_SUITE_ID
     #[cfg(test)]
     const AEAD_ID: u16;
     const X25519_HKDF_SHA256_SELF_HPKE_SUITE_ID: &'static [u8];

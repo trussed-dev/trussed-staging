@@ -65,7 +65,7 @@ fn extract<S: Store>(
         .as_ref()
         .map(|s| get_mat(s, keystore))
         .transpose()?;
-    let salt_ref = salt.as_deref().map(|d| &*d);
+    let salt_ref = salt.as_deref();
     let (prk, _) = Hkdf::<Sha256>::extract(salt_ref, &ikm);
     assert_eq!(prk.len(), 256 / 8);
     let key_id = keystore.store_key(

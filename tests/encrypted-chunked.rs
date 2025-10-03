@@ -87,9 +87,9 @@ fn encrypted_filesystem() {
                 .is_none(),
         );
 
-        let large_data = Bytes::try_from(&[0; 1024]).unwrap();
-        let large_data2 = Bytes::try_from(&[1; 1024]).unwrap();
-        let more_data = Bytes::try_from(&[2; 42]).unwrap();
+        let large_data = Bytes::from(&[0; 1024]);
+        let large_data2 = Bytes::from(&[1; 1024]);
+        let more_data = Bytes::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_encrypted_chunked_write(
             Location::Internal,

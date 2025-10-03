@@ -59,7 +59,7 @@ fn filesystem() {
         .metadata
         .is_none(),);
 
-        let data = Bytes::try_from(b"test data").unwrap();
+        let data = Bytes::from(b"test data");
         syscall!(client.write_file(
             Location::Internal,
             PathBuf::from(path!("test_file")),
@@ -82,9 +82,9 @@ fn filesystem() {
         assert!(empty_data.data.is_empty());
         assert_eq!(empty_data.len, data.len());
 
-        let large_data = Bytes::try_from(&[0; 1024]).unwrap();
-        let large_data2 = Bytes::try_from(&[1; 1024]).unwrap();
-        let more_data = Bytes::try_from(&[2; 42]).unwrap();
+        let large_data = Bytes::from(&[0; 1024]);
+        let large_data2 = Bytes::from(&[1; 1024]);
+        let more_data = Bytes::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_chunked_write(
             Location::Internal,
