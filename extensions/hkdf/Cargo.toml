@@ -3,7 +3,7 @@
 
 [package]
 name = "trussed-hkdf"
-version = "0.3.0"
+version = "0.4.0"
 description = "HKDF extension for trussed"
 authors.workspace = true
 edition.workspace = true

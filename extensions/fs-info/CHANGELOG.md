@@ -11,7 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/fs-info-v0.2.0...HEAD
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/fs-info-v0.3.0...HEAD
+
+-
+
+## [0.3.0][] - 2026-03-23
+
+[0.3.0]: https://github.com/Nitrokey/trussed-staging/releases/tag/fs-info-v0.3.0
 
 - Update to `trussed-core` v0.2
 

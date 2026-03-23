@@ -11,8 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.4.0...HEAD
 
+-
+
+## [0.4.0][] - 2026-03-23
+
+[0.4.0]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.3...v0.4.0
+
+- Update extensions:
+  - `trussed-chunked` v0.3.0
+  - `trussed-fs-info` v0.3.0
+  - `trussed-hkdf` v0.4.0
+  - `trussed-hpke` v0.3.0
+  - `trussed-manage` v0.3.0
+  - `trussed-wrap-key-to-file` v0.3.0
 - Update dependencies:
   - `heapless` v0.9
   - `heapless-bytes` v0.5
