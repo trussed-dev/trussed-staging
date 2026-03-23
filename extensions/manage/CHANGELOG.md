@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/manage-v0.2.1...HEAD
+
+- Update to `trussed-core` v0.2
+
 ## [0.2.1][] - 2025-05-13
 
 [0.2.1]: https://github.com/trussed-dev/trussed-staging/releases/tag/manage-v0.2.1

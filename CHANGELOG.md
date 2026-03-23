@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.3...HEAD
 
+- Update dependencies:
+  - `heapless` v0.9
+  - `heapless-bytes` v0.5
+  - `trussed-core` v0.2
+
 ## [0.3.3][] - 2025-05-13
 
 [0.3.3]: https://github.com/trussed-dev/trussed-staging/compare/v0.3.2...v0.3.3
