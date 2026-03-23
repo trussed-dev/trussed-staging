@@ -122,11 +122,13 @@ trait Aead:
         TagSize = <ChaCha20Poly1305 as AeadCore>::TagSize,
     >
 {
+    #[cfg(test)]
     const AEAD_ID: u16;
     const X25519_HKDF_SHA256_SELF_HPKE_SUITE_ID: &'static [u8];
 }
 
 impl Aead for ChaCha20Poly1305 {
+    #[cfg(test)]
     const AEAD_ID: u16 = 0x0003;
     const X25519_HKDF_SHA256_SELF_HPKE_SUITE_ID: &'static [u8] =
         X25519_HKDF_SHA256_CHACHA20_POLY1305_HPKE_SUITE_ID;
@@ -134,6 +136,7 @@ impl Aead for ChaCha20Poly1305 {
 
 impl Aead for ChaCha8Poly1305 {
     /// Custom non-standard Id
+    #[cfg(test)]
     const AEAD_ID: u16 = 0xFFFE;
     const X25519_HKDF_SHA256_SELF_HPKE_SUITE_ID: &'static [u8] = b"HPKE\x00\x20\x00\x01\xFF\xFE";
 }
