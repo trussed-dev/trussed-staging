@@ -4,10 +4,11 @@
 #![cfg(all(feature = "virt", feature = "manage"))]
 
 use littlefs2_core::path;
-use trussed::client::FilesystemClient;
-use trussed::syscall;
-use trussed::types::{Bytes, Location, Path};
+use littlefs2_core::Path;
 use trussed::virt::StoreConfig;
+use trussed_core::syscall;
+use trussed_core::types::{Bytes, Location};
+use trussed_core::FilesystemClient;
 use trussed_manage::ManageClient;
 use trussed_staging::virt::with_clients_and_preserve;
 

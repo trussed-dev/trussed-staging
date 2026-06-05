@@ -5,13 +5,13 @@
 
 use littlefs2_core::{path, PathBuf};
 use serde_byte_array::ByteArray;
-use trussed::{
-    client::CryptoClient, client::FilesystemClient, syscall, try_syscall, types::Location,
-    virt::StoreConfig, Bytes, Error,
-};
+use trussed::virt::StoreConfig;
 use trussed_chunked::{
     utils::{self, EncryptionData},
     ChunkedClient,
+};
+use trussed_core::{
+    syscall, try_syscall, types::Bytes, types::Location, CryptoClient, Error, FilesystemClient,
 };
 use trussed_staging::virt::with_client;
 

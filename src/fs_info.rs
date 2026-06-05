@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: CC0-1.0
 
 use trussed::{
-    platform::Store, serde_extensions::ExtensionImpl, service::ServiceResources,
-    types::CoreContext, Error, Platform,
+    serde_extensions::ExtensionImpl, service::ServiceResources, store::Store, types::CoreContext,
+    Platform,
 };
+use trussed_core::Error;
 use trussed_fs_info::{
     BlockInfo, FsInfoExtension, FsInfoExtensionReply, FsInfoExtensionRequest, FsInfoReply,
 };

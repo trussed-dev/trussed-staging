@@ -43,7 +43,8 @@ hkdf = { version = "0.12", optional = true }
 rand_core = { version = "0.6.4", default-features = false }
 sha2 = { version = "0.10", default-features = false, optional = true }
 salty = { version = "0.3.0", default-features = false }
-trussed = { version = "0.1.0", default-features = false, features = ["serde-extensions"] }
+trussed = { version = "=0.2.0-rc.1", default-features = false, features = ["serde-extensions"] }
+trussed-core = "0.2"
 digest = { version = "0.10.7", default-features = false }
 hex-literal = { version = "0.4.0", optional = true }
 aead = { version = "0.5.2", optional = true, default-features = false }
@@ -60,7 +61,7 @@ heapless-bytes = { version = "0.5.0", optional = true }
 [dev-dependencies]
 hex-literal = "0.4.0"
 hmac = "0.12.0"
-trussed = { version = "0.1.0", default-features = false, features = ["aes256-cbc", "crypto-client", "filesystem-client", "hmac-sha256", "virt", "x255"] }
+trussed = { version = "=0.2.0-rc.1", default-features = false, features = ["aes256-cbc", "crypto-client", "filesystem-client", "hmac-sha256", "virt", "x255"] }
 
 [features]
 default = ["chunked"]
@@ -85,8 +86,6 @@ log-warn = []
 log-error = []
 
 [patch.crates-io]
-trussed = { git = "https://github.com/trussed-dev/trussed.git", rev = "0b65280d69be541b8771f7756139826332c7d674" }
-
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
 trussed-hpke = { path = "extensions/hpke" }

@@ -7,11 +7,11 @@ use hex_literal::hex;
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
-use trussed::{
-    client::HmacSha256,
+use trussed::virt::StoreConfig;
+use trussed_core::{
+    mechanisms::HmacSha256,
     syscall,
     types::{Bytes, Location},
-    virt::StoreConfig,
 };
 use trussed_hkdf::{HkdfClient, KeyOrData::*};
 use trussed_staging::virt;

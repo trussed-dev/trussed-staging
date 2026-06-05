@@ -3,8 +3,12 @@
 
 //! Wrapper around [`trussed::virt`][] that provides clients with both the core backend and the [`StagingBackend`] backend.
 
+use trussed_core::api::{reply, request, Reply, Request};
+
 #[cfg(feature = "manage")]
-use trussed::types::{Location, Path};
+use littlefs2_core::Path;
+#[cfg(feature = "manage")]
+use trussed_core::types::Location;
 
 #[cfg(feature = "chunked")]
 use trussed_chunked::ChunkedExtension;
@@ -131,9 +135,9 @@ impl ExtensionDispatch for Dispatcher {
         &mut self,
         _backend: &Self::BackendId,
         ctx: &mut trussed::types::Context<Self::Context>,
-        request: &trussed::api::Request,
+        request: &Request,
         resources: &mut trussed::service::ServiceResources<P>,
-    ) -> Result<trussed::Reply, Error> {
+    ) -> Result<Reply, Error> {
         self.backend
             .request(&mut ctx.core, &mut ctx.backends, request, resources)
     }
@@ -143,9 +147,9 @@ impl ExtensionDispatch for Dispatcher {
         _backend: &Self::BackendId,
         extension: &Self::ExtensionId,
         ctx: &mut trussed::types::Context<Self::Context>,
-        request: &trussed::api::request::SerdeExtension,
+        request: &request::SerdeExtension,
         resources: &mut trussed::service::ServiceResources<P>,
-    ) -> Result<trussed::api::reply::SerdeExtension, Error> {
+    ) -> Result<reply::SerdeExtension, Error> {
         let _ = &extension;
         let _ = &ctx;
         let _ = &request;
@@ -216,8 +220,9 @@ use trussed::{
     backend::{Backend, BackendId},
     serde_extensions::*,
     virt::{self, StoreConfig},
-    Error, Platform,
+    Platform,
 };
+use trussed_core::Error;
 
 pub type Client<'a, D = Dispatcher> = virt::Client<'a, D>;
 

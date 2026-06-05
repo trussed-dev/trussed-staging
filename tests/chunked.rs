@@ -4,10 +4,9 @@
 #![cfg(all(feature = "virt", feature = "chunked"))]
 
 use littlefs2_core::{path, PathBuf};
-use trussed::{
-    client::FilesystemClient, syscall, try_syscall, types::Location, virt::StoreConfig, Bytes,
-};
+use trussed::virt::StoreConfig;
 use trussed_chunked::{utils, ChunkedClient};
+use trussed_core::{syscall, try_syscall, types::Bytes, types::Location, FilesystemClient};
 use trussed_staging::virt::with_client;
 
 fn test_write_all(location: Location) {

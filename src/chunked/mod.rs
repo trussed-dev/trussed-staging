@@ -9,18 +9,22 @@ use chacha20poly1305::{
     aead::stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31},
     ChaCha8Poly1305, KeyInit,
 };
+use littlefs2_core::{Path, PathBuf};
 use rand_core::RngCore;
 use trussed::{
     config::MAX_MESSAGE_LENGTH,
     key::{Kind, Secrecy},
     serde_extensions::ExtensionImpl,
-    service::{Filestore, Keystore, ServiceResources},
-    store::Store,
-    types::{CoreContext, Location, Message, Path, PathBuf},
-    Bytes, Error,
+    service::ServiceResources,
+    store::{Filestore, Keystore, Store},
+    types::CoreContext,
 };
 use trussed_chunked::{
     reply, ChunkedExtension, ChunkedReply, ChunkedRequest, CHACHA8_STREAM_NONCE_LEN,
+};
+use trussed_core::{
+    types::{Bytes, Location, Message},
+    Error,
 };
 
 use crate::StagingContext;

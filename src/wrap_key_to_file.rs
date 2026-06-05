@@ -1,12 +1,17 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
+use chacha20poly1305::aead::generic_array::GenericArray;
 use trussed::{
     config::MAX_SERIALIZED_KEY_LENGTH,
     key::{self, Kind, Secrecy},
     serde_extensions::ExtensionImpl,
-    service::{Filestore, Keystore, ServiceResources},
-    types::{Bytes, CoreContext, GenericArray},
+    service::ServiceResources,
+    store::{Filestore, Keystore},
+    types::CoreContext,
+};
+use trussed_core::{
+    types::{Bytes, Mechanism},
     Error,
 };
 use trussed_wrap_key_to_file::{
@@ -24,10 +29,7 @@ fn wrap_key_to_file(
     filestore: &mut impl Filestore,
     request: &request::WrapKeyToFile,
 ) -> Result<reply::WrapKeyToFile, Error> {
-    if !matches!(
-        request.mechanism,
-        trussed::types::Mechanism::Chacha8Poly1305
-    ) {
+    if !matches!(request.mechanism, Mechanism::Chacha8Poly1305) {
         return Err(Error::MechanismInvalid);
     }
 
@@ -64,10 +66,7 @@ fn unwrap_key_from_file(
     filestore: &mut impl Filestore,
     request: &request::UnwrapKeyFromFile,
 ) -> Result<reply::UnwrapKeyFromFile, Error> {
-    if !matches!(
-        request.mechanism,
-        trussed::types::Mechanism::Chacha8Poly1305
-    ) {
+    if !matches!(request.mechanism, Mechanism::Chacha8Poly1305) {
         return Err(Error::MechanismInvalid);
     }
 

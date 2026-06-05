@@ -2,12 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 use littlefs2_core::{path, DirEntry, Path};
-use trussed::{
-    serde_extensions::{Extension, ExtensionImpl},
-    store::Store,
-    types::Location,
-    Error,
-};
+use trussed::{serde_extensions::ExtensionImpl, store::Store};
+use trussed_core::{serde_extensions::Extension, types::Location, Error};
 use trussed_manage::{
     FactoryResetClientReply, FactoryResetClientRequest, FactoryResetDeviceReply,
     FactoryResetDeviceRequest, ManageExtension, ManageReply, ManageRequest,
@@ -22,8 +18,8 @@ pub struct State {
     ///
     /// The path start all  start with the root. Here is an example such function:
     /// ```rust
-    ///# use trussed::types::{Path, Location};
-    ///# use littlefs2_core::path;
+    ///# use trussed_core::types::Location;
+    ///# use littlefs2_core::{path, Path};
     /// fn should_preserve(path: &Path, location: Location) -> bool {
     ///     (location == Location::Internal && path == path!("/client1/dat/to_save_internal"))
     ///         || (location == Location::External && path == path!("/client1/dat/to_save_external"))

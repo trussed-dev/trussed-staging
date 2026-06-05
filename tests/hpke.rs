@@ -4,11 +4,12 @@
 #![cfg(all(feature = "virt", feature = "hpke"))]
 
 use littlefs2_core::path;
-use trussed::client::{CryptoClient, X255};
-use trussed::{
+use trussed::virt::StoreConfig;
+use trussed_core::{
+    mechanisms::X255,
     syscall,
     types::{Bytes, KeyId, Location, Mechanism, SignatureSerialization},
-    virt::StoreConfig,
+    CryptoClient,
 };
 
 use trussed_hpke::HpkeClient;

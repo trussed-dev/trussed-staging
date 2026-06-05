@@ -4,13 +4,13 @@
 #![cfg(all(feature = "virt", feature = "wrap-key-to-file"))]
 
 use littlefs2_core::path;
-use trussed::client::CryptoClient;
-use trussed::syscall;
-use trussed::types::{
-    KeyId, KeySerialization, Location::*, Mechanism, PathBuf, SignatureSerialization,
-    StorageAttributes,
-};
+use littlefs2_core::PathBuf;
 use trussed::virt::StoreConfig;
+use trussed_core::syscall;
+use trussed_core::types::{
+    KeyId, KeySerialization, Location::*, Mechanism, SignatureSerialization, StorageAttributes,
+};
+use trussed_core::CryptoClient;
 
 use trussed_staging::virt::with_client;
 

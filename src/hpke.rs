@@ -7,11 +7,9 @@ use trussed::{
     config::MAX_SERIALIZED_KEY_LENGTH,
     key,
     serde_extensions::ExtensionImpl,
-    service::Filestore,
-    store::keystore::Keystore,
-    types::{KeyId, Message},
-    Bytes,
+    store::{Filestore, Keystore},
 };
+use trussed_core::types::{Bytes, KeyId, Message};
 use trussed_hpke::*;
 
 type HkdfSha256 = hkdf::Hkdf<sha2::Sha256>;
@@ -309,13 +307,13 @@ fn open8(
 fn load_public_key(
     key_id: &KeyId,
     keystore: &mut impl Keystore,
-) -> Result<x25519::PublicKey, trussed::Error> {
+) -> Result<x25519::PublicKey, trussed_core::Error> {
     let public_bytes: [u8; 32] = keystore
         .load_key(key::Secrecy::Public, Some(key::Kind::X255), key_id)?
         .material
         .as_slice()
         .try_into()
-        .map_err(|_| trussed::Error::InternalError)?;
+        .map_err(|_| trussed_core::Error::InternalError)?;
     let public_key = x25519::PublicKey::from(public_bytes);
     Ok(public_key)
 }
@@ -323,13 +321,13 @@ fn load_public_key(
 fn load_secret_key(
     key_id: &KeyId,
     keystore: &mut impl Keystore,
-) -> Result<x25519::SecretKey, trussed::Error> {
+) -> Result<x25519::SecretKey, trussed_core::Error> {
     let secret_bytes: [u8; 32] = keystore
         .load_key(key::Secrecy::Secret, Some(key::Kind::X255), key_id)?
         .material
         .as_slice()
         .try_into()
-        .map_err(|_| trussed::Error::InternalError)?;
+        .map_err(|_| trussed_core::Error::InternalError)?;
     let secret_key = x25519::SecretKey::from_seed(&secret_bytes);
     Ok(secret_key)
 }
@@ -339,10 +337,12 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
         &mut self,
         core_ctx: &mut trussed::types::CoreContext,
         _backend_ctx: &mut Self::Context,
-        request: &<HpkeExtension as trussed::serde_extensions::Extension>::Request,
+        request: &<HpkeExtension as trussed_core::serde_extensions::Extension>::Request,
         resources: &mut trussed::service::ServiceResources<P>,
-    ) -> Result<<HpkeExtension as trussed::serde_extensions::Extension>::Reply, trussed::Error>
-    {
+    ) -> Result<
+        <HpkeExtension as trussed_core::serde_extensions::Extension>::Reply,
+        trussed_core::Error,
+    > {
         let filestore = &mut resources.filestore(core_ctx.path.clone());
         let keystore = &mut resources.keystore(core_ctx.path.clone())?;
 
@@ -382,10 +382,10 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
 
                 message
                     .extend_from_slice(&pk.to_bytes())
-                    .map_err(|_| trussed::Error::SignDataTooLarge)?;
+                    .map_err(|_| trussed_core::Error::SignDataTooLarge)?;
                 message
                     .extend_from_slice(&tag)
-                    .map_err(|_| trussed::Error::SignDataTooLarge)?;
+                    .map_err(|_| trussed_core::Error::SignDataTooLarge)?;
 
                 Ok(HpkeSealKeyReply { data: message }.into())
             }
@@ -410,10 +410,10 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
 
                 message
                     .extend_from_slice(&pk.to_bytes())
-                    .map_err(|_| trussed::Error::SignDataTooLarge)?;
+                    .map_err(|_| trussed_core::Error::SignDataTooLarge)?;
                 message
                     .extend_from_slice(&tag)
-                    .map_err(|_| trussed::Error::SignDataTooLarge)?;
+                    .map_err(|_| trussed_core::Error::SignDataTooLarge)?;
                 filestore.write(&req.file, req.location, &message)?;
 
                 Ok(HpkeSealKeyToFileReply {}.into())
@@ -431,19 +431,23 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                     &mut ct,
                     req.tag.into(),
                 )
-                .map_err(|_| trussed::Error::AeadError)?;
+                .map_err(|_| trussed_core::Error::AeadError)?;
 
                 Ok(HpkeOpenReply { plaintext: ct }.into())
             }
             HpkeRequest::OpenKey(req) => {
                 let secret_key = load_secret_key(&req.key, keystore)?;
                 let mut ct = req.sealed_key.clone();
-                let (ct, tag) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
-                let (ct, enc_bytes) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
+                let (ct, tag) = ct
+                    .split_last_chunk_mut()
+                    .ok_or(trussed_core::Error::AeadError)?;
+                let (ct, enc_bytes) = ct
+                    .split_last_chunk_mut()
+                    .ok_or(trussed_core::Error::AeadError)?;
                 let enc = x25519::PublicKey::from(*enc_bytes);
 
                 open8(enc, secret_key, &req.info, &req.aad, ct, *tag)
-                    .map_err(|_| trussed::Error::AeadError)?;
+                    .map_err(|_| trussed_core::Error::AeadError)?;
 
                 let key::Key {
                     flags: _,
@@ -460,12 +464,16 @@ impl ExtensionImpl<HpkeExtension> for StagingBackend {
                 let secret_key = load_secret_key(&req.key, keystore)?;
                 let mut ct: Bytes<{ MAX_SERIALIZED_KEY_LENGTH + 32 + 16 }> =
                     filestore.read(&req.sealed_key, req.sealed_location)?;
-                let (ct, tag) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
-                let (ct, enc_bytes) = ct.split_last_chunk_mut().ok_or(trussed::Error::AeadError)?;
+                let (ct, tag) = ct
+                    .split_last_chunk_mut()
+                    .ok_or(trussed_core::Error::AeadError)?;
+                let (ct, enc_bytes) = ct
+                    .split_last_chunk_mut()
+                    .ok_or(trussed_core::Error::AeadError)?;
                 let enc = x25519::PublicKey::from(*enc_bytes);
 
                 open8(enc, secret_key, &req.info, &req.aad, ct, *tag)
-                    .map_err(|_| trussed::Error::AeadError)?;
+                    .map_err(|_| trussed_core::Error::AeadError)?;
 
                 let key::Key {
                     flags: _,

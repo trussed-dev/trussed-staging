@@ -25,5 +25,7 @@ jobs:
       if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-publish-check-trussed-hpke') }}
     - run: cargo publish --dry-run --package trussed-manage
       if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-publish-check-trussed-manage') }}
+    - run: cargo publish --dry-run --package trussed-staging
+      if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-publish-check-trussed-staging') }}
     - run: cargo publish --dry-run --package trussed-wrap-key-to-file
       if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-publish-check-trussed-wrap-key-to-file') }}

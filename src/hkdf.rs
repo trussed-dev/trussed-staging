@@ -7,10 +7,14 @@ use trussed::{
     config::MAX_MEDIUM_DATA_LENGTH,
     key::{Kind, Secrecy},
     serde_extensions::ExtensionImpl,
-    service::{ClientKeystore, Keystore, ServiceResources},
-    store::Store,
-    types::{Bytes, CoreContext, MediumData, ShortData},
-    Error, Platform,
+    service::ServiceResources,
+    store::{ClientKeystore, Keystore, Store},
+    types::CoreContext,
+    Platform,
+};
+use trussed_core::{
+    types::{Bytes, MediumData, ShortData},
+    Error,
 };
 use trussed_hkdf::{
     HkdfExpandReply, HkdfExpandRequest, HkdfExtension, HkdfExtractReply, HkdfExtractRequest,
