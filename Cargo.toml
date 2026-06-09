@@ -85,6 +85,9 @@ log-debug = []
 log-warn = []
 log-error = []
 
+[package.metadata.docs.rs]
+all-features = true
+
 [patch.crates-io]
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }

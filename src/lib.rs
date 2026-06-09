@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(non_ascii_idents, trivial_casts, unused, unused_qualifications)]
 #![deny(unsafe_code)]
 
