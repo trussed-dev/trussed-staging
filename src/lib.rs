@@ -8,7 +8,20 @@
 
 delog::generate_macros!();
 
-use trussed::backend::Backend;
+use trussed::{backend::Backend, service::ServiceResources, types::CoreContext};
+use trussed_core::{
+    api::{request, Reply, Request},
+    types::Mechanism,
+    Error,
+};
+
+#[cfg(feature = "ml-dsa")]
+mod ml_dsa_impl;
+#[cfg(feature = "ml-dsa")]
+use ml_dsa_impl::Params;
+
+#[cfg(feature = "ml-kem")]
+mod ml_kem_impl;
 
 #[cfg(feature = "virt")]
 pub mod virt;
@@ -58,4 +71,164 @@ pub struct StagingContext {
 
 impl Backend for StagingBackend {
     type Context = StagingContext;
+
+    fn request<P: trussed::Platform>(
+        &mut self,
+        core_ctx: &mut CoreContext,
+        _backend_ctx: &mut Self::Context,
+        request: &Request,
+        resources: &mut ServiceResources<P>,
+    ) -> Result<Reply, Error> {
+        /// Coerce an FnMut into a FnOnce to ensure the stores are not created twice by mistake
+        fn once<R, P>(
+            generator: impl FnMut(&mut ServiceResources<P>, &mut CoreContext) -> R,
+        ) -> impl FnOnce(&mut ServiceResources<P>, &mut CoreContext) -> R {
+            generator
+        }
+
+        let _keystore = once(|resources: &mut ServiceResources<P>, core_ctx| {
+            resources.keystore(core_ctx.path.clone())
+        });
+
+        #[cfg(feature = "ml-dsa")]
+        match request {
+            Request::Sign(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .sign(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Sign)
+            }
+            Request::Sign(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .sign(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Sign)
+            }
+            Request::Sign(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .sign(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Sign)
+            }
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::Verify(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .verify(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Verify)
+            }
+            Request::Verify(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .verify(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Verify)
+            }
+            Request::Verify(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .verify(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Verify)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlDsa44 => {
+                return ml_dsa::MlDsa44
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlDsa65 => {
+                return ml_dsa::MlDsa65
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlDsa87 => {
+                return ml_dsa::MlDsa87
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            _ => {}
+        }
+
+        #[cfg(feature = "ml-kem")]
+        match request {
+            Request::Encrypt(
+                req @ request::Encrypt {
+                    mechanism: Mechanism::Mlkem512 | Mechanism::Mlkem768 | Mechanism::Mlkem1024,
+                    ..
+                },
+            ) => {
+                return ml_kem_impl::encrypt(req, &mut _keystore(resources, core_ctx)?)
+                    .map(Reply::Encrypt)
+            }
+            _ => {}
+        }
+
+        Err(Error::RequestNotAvailable)
+    }
 }
