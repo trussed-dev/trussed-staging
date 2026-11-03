@@ -9,6 +9,7 @@ members = [
   "extensions/hpke",
   "extensions/manage",
   "extensions/wrap-key-to-file",
+  "extensions/kem",
 ]
 
 [workspace.package]
@@ -51,6 +52,7 @@ aead = { version = "0.5.2", optional = true, default-features = false }
 
 trussed-chunked = { version = "0.3.0", optional = true }
 trussed-hkdf = { version = "0.4.0", optional = true }
+trussed-kem = { version = "0.1.0", optional = true }
 trussed-hpke = { version = "0.3.0", optional = true }
 trussed-manage = { version = "0.3.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.3.0", optional = true }
@@ -59,6 +61,7 @@ heapless = { version = "0.9.1", optional = true }
 heapless-bytes = { version = "0.5.0", optional = true }
 ml-dsa = { version = "0.1.2", default-features = false, optional = true, features = ["rand_core"] }
 ml-kem = { version = "0.3.4", default-features = false, optional = true }
+typenum = { version = "1.20.1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.0"
@@ -83,6 +86,8 @@ ml-dsa = [
 ]
 ml-kem = [
   "dep:ml-kem",
+  "dep:typenum",
+  "dep:trussed-kem",
   "trussed/crypto-client",
   "trussed-core/mlkem512",
   "trussed-core/mlkem768",
@@ -107,6 +112,7 @@ all-features = true
 [patch.crates-io]
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
+trussed-kem = { path = "extensions/kem" }
 trussed-hpke = { path = "extensions/hpke" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
