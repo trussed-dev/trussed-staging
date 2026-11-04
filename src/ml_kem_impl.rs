@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use ml_dsa::KeyExport;
+use ml_kem::KeyExport;
 use rand_core::{CryptoRng, RngCore};
 use trussed::{
     key::{self, Kind, Secrecy},
