@@ -10,7 +10,7 @@ delog::generate_macros!();
 
 use trussed::{backend::Backend, service::ServiceResources, types::CoreContext};
 use trussed_core::{
-    api::{request, Reply, Request},
+    api::{Reply, Request},
     types::Mechanism,
     Error,
 };
@@ -18,10 +18,12 @@ use trussed_core::{
 #[cfg(feature = "ml-dsa")]
 mod ml_dsa_impl;
 #[cfg(feature = "ml-dsa")]
-use ml_dsa_impl::Params;
+use ml_dsa_impl::Params as _;
 
 #[cfg(feature = "ml-kem")]
 mod ml_kem_impl;
+#[cfg(feature = "ml-kem")]
+use ml_kem_impl::Params as _;
 
 #[cfg(feature = "virt")]
 pub mod virt;
@@ -217,18 +219,113 @@ impl Backend for StagingBackend {
 
         #[cfg(feature = "ml-kem")]
         match request {
-            Request::Encrypt(
-                req @ request::Encrypt {
-                    mechanism: Mechanism::Mlkem512 | Mechanism::Mlkem768 | Mechanism::Mlkem1024,
-                    ..
-                },
-            ) => {
-                return ml_kem_impl::encrypt(req, &mut _keystore(resources, core_ctx)?)
-                    .map(Reply::Encrypt)
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeriveKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .derive_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeriveKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::DeserializeKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .deserialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::DeserializeKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::GenerateKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .generate_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::GenerateKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::SerializeKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .serialize_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::SerializeKey)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::Exists(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .exists(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::Exists)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem512 => {
+                return ml_kem::MlKem512
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem768 => {
+                return ml_kem::MlKem768
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
+            }
+            Request::UnsafeInjectKey(req) if req.mechanism == Mechanism::MlKem1024 => {
+                return ml_kem::MlKem1024
+                    .unsafe_inject_key(&mut _keystore(resources, core_ctx)?, req)
+                    .map(Reply::UnsafeInjectKey)
             }
             _ => {}
         }
-
         Err(Error::RequestNotAvailable)
     }
 }

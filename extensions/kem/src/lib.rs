@@ -8,7 +8,7 @@
 use serde::{Deserialize, Serialize};
 use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
-    types::{KeyId, ShortData, StorageAttributes},
+    types::{KeyId, Mechanism, ShortData, StorageAttributes},
     Error,
 };
 
@@ -103,6 +103,7 @@ pub struct KemEncapsulateReply {
 pub struct KemEncapsulateRequest {
     pub key: KeyId,
     pub attributes: StorageAttributes,
+    pub mechanism: Mechanism,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -115,6 +116,7 @@ pub struct KemDecapsulateRequest {
     pub key: KeyId,
     pub ciphertext: ShortData,
     pub attributes: StorageAttributes,
+    pub mechanism: Mechanism,
 }
 
 pub type KemResult<'a, R, C> = ExtensionResult<'a, KemExtension, R, C>;
@@ -124,10 +126,12 @@ pub trait KemClient: ExtensionClient<KemExtension> {
         &mut self,
         key: KeyId,
         attributes: StorageAttributes,
+        mechanism: Mechanism,
     ) -> KemResult<'_, KemEncapsulateReply, Self> {
         self.extension(KemRequest::Encapsulate(KemEncapsulateRequest {
             key,
             attributes,
+            mechanism,
         }))
     }
     fn kem_decapsulate(
@@ -135,11 +139,13 @@ pub trait KemClient: ExtensionClient<KemExtension> {
         key: KeyId,
         ciphertext: ShortData,
         attributes: StorageAttributes,
+        mechanism: Mechanism,
     ) -> KemResult<'_, KemDecapsulateReply, Self> {
         self.extension(KemRequest::Decapsulate(KemDecapsulateRequest {
             key,
             ciphertext,
             attributes,
+            mechanism,
         }))
     }
 }
