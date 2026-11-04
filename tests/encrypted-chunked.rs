@@ -11,19 +11,21 @@ use trussed_chunked::{
     ChunkedClient,
 };
 use trussed_core::{
-    syscall, try_syscall, types::Bytes, types::Location, CryptoClient, Error, FilesystemClient,
+    config::MAX_MESSAGE_LENGTH, syscall, try_syscall, types::Bytes, types::Location, CryptoClient,
+    Error, FilesystemClient,
 };
 use trussed_staging::virt::with_client;
 
 fn test_write_all(location: Location) {
     with_client(StoreConfig::ram(), "test chunked", |mut client| {
+        const DATA_LEN: usize = MAX_MESSAGE_LENGTH + 1234;
         let key = syscall!(client.generate_secret_key(32, Location::Volatile)).key;
         let path = PathBuf::from(path!("foo"));
         utils::write_all(
             &mut client,
             location,
             path.clone(),
-            &[48; 1234],
+            &[48; DATA_LEN],
             None,
             Some(EncryptionData { key, nonce: None }),
         )
@@ -31,9 +33,9 @@ fn test_write_all(location: Location) {
 
         syscall!(client.start_encrypted_chunked_read(location, path, key));
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1024]);
+        assert_eq!(&data, &[48; MAX_MESSAGE_LENGTH]);
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1234 - 1024]);
+        assert_eq!(&data, &[48; DATA_LEN - MAX_MESSAGE_LENGTH]);
     });
 }
 
@@ -87,8 +89,8 @@ fn encrypted_filesystem() {
                 .is_none(),
         );
 
-        let large_data = Bytes::from(&[0; 1024]);
-        let large_data2 = Bytes::from(&[1; 1024]);
+        let large_data = Bytes::from(&[0; MAX_MESSAGE_LENGTH]);
+        let large_data2 = Bytes::from(&[1; MAX_MESSAGE_LENGTH]);
         let more_data = Bytes::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_encrypted_chunked_write(
