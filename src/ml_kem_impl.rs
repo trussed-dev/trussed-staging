@@ -1,3 +1,6 @@
+// Copyright (C) Nitrokey GmbH
+// SPDX-License-Identifier: Apache-2.0 or MIT
+
 use ml_dsa::KeyExport;
 use rand_core::{CryptoRng, RngCore};
 use trussed::{
@@ -308,7 +311,7 @@ pub trait Params: ParamsInternal {
         assert_eq!(req.mechanism, Self::MECHANISM);
         let encapsulation_key = self.load_encapsulation_key(keystore, &req.key)?;
         let (ciphertext, shared_secret) =
-            Self::encapsulate_with_rng(&self, &encapsulation_key, keystore.rng());
+            Self::encapsulate_with_rng(self, &encapsulation_key, keystore.rng());
         let shared_secret = keystore.store_key(
             req.attributes.persistence,
             Secrecy::Secret,
