@@ -11,11 +11,13 @@ use serde::{Deserialize, Serialize};
 use serde_byte_array::ByteArray;
 use trussed_core::{
     serde_extensions::{Extension, ExtensionClient, ExtensionResult},
-    types::{KeyId, Location, Message, PathBuf, UserAttribute},
+    types::{Bytes, KeyId, Location, PathBuf, UserAttribute},
     FilesystemClient,
 };
 
 pub const CHACHA8_STREAM_NONCE_LEN: usize = 8;
+pub const CHUNK_SIZE: usize = 1024;
+pub type Chunk = Bytes<CHUNK_SIZE>;
 
 #[derive(Debug, Default)]
 pub struct ChunkedExtension;
@@ -57,7 +59,7 @@ pub mod request {
     use super::*;
     use serde::{Deserialize, Serialize};
     use serde_byte_array::ByteArray;
-    use trussed_core::types::{KeyId, Location, Message, PathBuf, UserAttribute};
+    use trussed_core::types::{KeyId, Location, PathBuf, UserAttribute};
     use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -174,7 +176,7 @@ pub mod request {
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct WriteChunk {
-        pub data: Message,
+        pub data: Chunk,
     }
 
     impl TryFrom<ChunkedRequest> for WriteChunk {
@@ -240,7 +242,7 @@ pub mod request {
     pub struct AppendFile {
         pub location: Location,
         pub path: PathBuf,
-        pub data: Message,
+        pub data: Chunk,
     }
 
     impl TryFrom<ChunkedRequest> for AppendFile {
@@ -263,12 +265,11 @@ pub mod request {
 pub mod reply {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use trussed_core::types::Message;
     use trussed_core::Error;
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct ReadChunk {
-        pub data: Message,
+        pub data: Chunk,
         pub len: usize,
     }
 
@@ -328,7 +329,7 @@ pub mod reply {
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct StartChunkedRead {
-        pub data: Message,
+        pub data: Chunk,
         pub len: usize,
     }
 
@@ -409,7 +410,7 @@ pub mod reply {
 
     #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
     pub struct PartialReadFile {
-        pub data: Message,
+        pub data: Chunk,
         pub file_length: usize,
     }
 
@@ -457,7 +458,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin writing a file that can be larger than 1KiB
     ///
     /// More chunks can be written with [`write_file_chunk`](ChunkedClient::write_file_chunk).
-    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a `Message` is transfered.
+    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Chunk`] is transfered.
     fn start_chunked_write(
         &mut self,
         location: Location,
@@ -474,7 +475,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin writing an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be written with [`write_file_chunk`](ChunkedClient::write_file_chunk).
-    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Message`] is transfered.
+    /// The data is flushed and becomes readable when a chunk smaller than the maximum capacity of a [`Chunk`] is transfered.
     fn start_encrypted_chunked_write(
         &mut self,
         location: Location,
@@ -495,7 +496,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading a file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Chunk`] is transfered.
     fn start_chunked_read(
         &mut self,
         location: Location,
@@ -507,7 +508,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Begin reading an encrypted file that can be larger than 1KiB
     ///
     /// More chunks can be read with [`read_file_chunk`](ChunkedClient::read_file_chunk).
-    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Message`] is transfered.
+    /// The read is over once a chunk of size smaller than the maximum capacity of a [`Chunk`] is transfered.
     /// Only once the entire file has been read does the data have been properly authenticated.
     fn start_encrypted_chunked_read(
         &mut self,
@@ -525,7 +526,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Write part of a file
     ///
     /// See [`start_chunked_write`](ChunkedClient::start_chunked_write).
-    fn write_file_chunk(&mut self, data: Message) -> ChunkedResult<'_, reply::WriteChunk, Self> {
+    fn write_file_chunk(&mut self, data: Chunk) -> ChunkedResult<'_, reply::WriteChunk, Self> {
         self.extension(request::WriteChunk { data })
     }
 
@@ -542,7 +543,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
     /// Partially read a file from a given offset, returning a chunk of the given length and the
     /// total file size.
     ///
-    /// If the length is greater than [`trussed_core::config::MAX_MESSAGE_LENGTH`][] or if the offset is
+    /// If the length is greater than [`CHUNK_SIZE`] or if the offset is
     /// greater than the file size, an error is returned.
     fn partial_read_file(
         &mut self,
@@ -564,7 +565,7 @@ pub trait ChunkedClient: ExtensionClient<ChunkedExtension> + FilesystemClient {
         &mut self,
         location: Location,
         path: PathBuf,
-        data: Message,
+        data: Chunk,
     ) -> ChunkedResult<'_, reply::AppendFile, Self> {
         self.extension(request::AppendFile {
             location,

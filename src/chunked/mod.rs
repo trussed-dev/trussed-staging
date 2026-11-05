@@ -12,7 +12,6 @@ use chacha20poly1305::{
 use littlefs2_core::{Path, PathBuf};
 use rand_core::RngCore;
 use trussed::{
-    config::MAX_MESSAGE_LENGTH,
     key::{Kind, Secrecy},
     serde_extensions::ExtensionImpl,
     service::ServiceResources,
@@ -20,10 +19,11 @@ use trussed::{
     types::CoreContext,
 };
 use trussed_chunked::{
-    reply, ChunkedExtension, ChunkedReply, ChunkedRequest, CHACHA8_STREAM_NONCE_LEN,
+    reply, Chunk, ChunkedExtension, ChunkedReply, ChunkedRequest, CHACHA8_STREAM_NONCE_LEN,
+    CHUNK_SIZE,
 };
 use trussed_core::{
-    types::{Bytes, Location, Message},
+    types::{Bytes, Location},
     Error,
 };
 
@@ -286,7 +286,7 @@ fn write_chunk(
     store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
-    data: &Message,
+    data: &Chunk,
 ) -> Result<(), Error> {
     match ctx.chunked_io_state {
         Some(ChunkedIoState::Write(ref write_state)) => {
@@ -299,8 +299,7 @@ fn write_chunk(
             )?;
         }
         Some(ChunkedIoState::EncryptedWrite(ref mut write_state)) => {
-            let mut data =
-                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
+            let mut data = Bytes::<{ CHUNK_SIZE + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
             write_state
                 .encryptor
                 .encrypt_next_in_place(
@@ -328,7 +327,7 @@ fn write_last_chunk(
     store: &impl Store,
     client_id: &Path,
     ctx: &mut StagingContext,
-    data: &Message,
+    data: &Chunk,
 ) -> Result<(), Error> {
     match ctx.chunked_io_state.take() {
         Some(ChunkedIoState::Write(write_state)) => {
@@ -342,8 +341,7 @@ fn write_last_chunk(
             store::flush_chunks(store, client_id, &write_state.path, write_state.location)?;
         }
         Some(ChunkedIoState::EncryptedWrite(write_state)) => {
-            let mut data =
-                Bytes::<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
+            let mut data = Bytes::<{ CHUNK_SIZE + POLY1305_TAG_LEN }>::try_from(&**data).unwrap();
             write_state
                 .encryptor
                 .encrypt_last_in_place(
@@ -379,7 +377,7 @@ fn read_encrypted_chunk(
             "Read encrypted chunk can only be called in the context encrypted chunk reads"
         );
     };
-    let (mut data, len): (Bytes<{ MAX_MESSAGE_LENGTH + POLY1305_TAG_LEN }>, usize) =
+    let (mut data, len): (Bytes<{ CHUNK_SIZE + POLY1305_TAG_LEN }>, usize) =
         store::filestore_read_chunk(
             store,
             client_id,
@@ -437,14 +435,14 @@ fn chunked_decrypted_len(len: usize) -> Result<usize, Error> {
         error!("File too small");
         Error::FilesystemReadFailure
     })?;
-    const CHUNK_LEN: usize = POLY1305_TAG_LEN + MAX_MESSAGE_LENGTH;
-    let chunk_count = len / CHUNK_LEN;
-    let last_chunk_len = (len % CHUNK_LEN)
+    const ENCYRPTED_CHUNK_LEN: usize = POLY1305_TAG_LEN + CHUNK_SIZE;
+    let chunk_count = len / ENCYRPTED_CHUNK_LEN;
+    let last_chunk_len = (len % ENCYRPTED_CHUNK_LEN)
         .checked_sub(POLY1305_TAG_LEN)
         .ok_or_else(|| {
             error!("Incorrect last chunk length");
             Error::FilesystemReadFailure
         })?;
 
-    Ok(chunk_count * MAX_MESSAGE_LENGTH + last_chunk_len)
+    Ok(chunk_count * CHUNK_SIZE + last_chunk_len)
 }
