@@ -8,7 +8,7 @@ use serde_byte_array::ByteArray;
 use trussed::virt::StoreConfig;
 use trussed_chunked::{
     utils::{self, EncryptionData},
-    ChunkedClient,
+    ChunkedClient, CHUNK_SIZE,
 };
 use trussed_core::{
     syscall, try_syscall, types::Bytes, types::Location, CryptoClient, Error, FilesystemClient,
@@ -31,9 +31,9 @@ fn test_write_all(location: Location) {
 
         syscall!(client.start_encrypted_chunked_read(location, path, key));
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1024]);
+        assert_eq!(&data, &[48; CHUNK_SIZE]);
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1234 - 1024]);
+        assert_eq!(&data, &[48; 1234 - CHUNK_SIZE]);
     });
 }
 
@@ -87,8 +87,8 @@ fn encrypted_filesystem() {
                 .is_none(),
         );
 
-        let large_data = Bytes::from(&[0; 1024]);
-        let large_data2 = Bytes::from(&[1; 1024]);
+        let large_data = Bytes::from(&[0; CHUNK_SIZE]);
+        let large_data2 = Bytes::from(&[1; CHUNK_SIZE]);
         let more_data = Bytes::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_encrypted_chunked_write(

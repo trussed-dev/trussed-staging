@@ -8,7 +8,7 @@ use trussed_core::{
     Error,
 };
 
-use crate::{ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
+use crate::{Chunk, ChunkedClient, CHACHA8_STREAM_NONCE_LEN};
 
 #[derive(Clone, Copy)]
 pub struct EncryptionData {
@@ -60,10 +60,10 @@ fn write_chunked_inner(
     user_attribute: Option<UserAttribute>,
     encryption: Option<EncryptionData>,
 ) -> Result<(), Error> {
-    let msg = Message::new();
+    let msg = Chunk::new();
     let chunk_size = msg.capacity();
     let chunks = data.chunks(chunk_size).map(|chunk| {
-        Message::try_from(chunk).expect("Iteration over chunks yields maximum of chunk_size")
+        Chunk::try_from(chunk).expect("Iteration over chunks yields maximum of chunk_size")
     });
     if let Some(encryption_data) = encryption {
         try_syscall!(client.start_encrypted_chunked_write(
@@ -83,7 +83,7 @@ fn write_chunked_inner(
     }
 
     if { written % chunk_size } == 0 {
-        try_syscall!(client.write_file_chunk(Message::new()))?;
+        try_syscall!(client.write_file_chunk(Chunk::new()))?;
     }
     Ok(())
 }
