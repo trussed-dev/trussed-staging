@@ -6,6 +6,7 @@ check:
 	RUSTLFAGS='-Dwarnings' cargo check --all-features --all-targets --workspace
 	RUSTLFAGS='-Dwarnings' cargo check --no-default-features
 	RUSTLFAGS='-Dwarnings' cargo check --features chunked
+	RUSTLFAGS='-Dwarnings' cargo check --features chunked,trussed-core/mldsa44
 	RUSTLFAGS='-Dwarnings' cargo check --features hkdf
 	RUSTLFAGS='-Dwarnings' cargo check --features manage
 	RUSTLFAGS='-Dwarnings' cargo check --features wrap-key-to-file
@@ -20,6 +21,7 @@ lint:
 .PHONY: test
 test:
 	cargo test --all-features --workspace
+	cargo test --all-features --workspace --features trussed-core/mldsa44
 
 .PHONY: ci
 ci: check lint test
