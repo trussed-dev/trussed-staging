@@ -140,7 +140,11 @@ pub fn move_file(
         .map_err(|_err| {
             error!("Failed to flush chunks: {:?}", _err);
             Error::FilesystemWriteFailure
-        })
+        })?;
+    store.fs(from_location).remove(from_path).map_err(|_err| {
+        error!("Failed to clear written chunks");
+        Error::FilesystemWriteFailure
+    })
 }
 
 fn copy_file_data(from: &dyn DynFile, to: &dyn DynFile) -> Result<(), littlefs2_core::Error> {
