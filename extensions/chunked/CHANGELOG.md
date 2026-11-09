@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/chunked-v0.3.0...HEAD
 
--
+- hard-code the buffer length 
 
 ## [0.3.0][] - 2026-03-23
 
