@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/chunked-v0.3.0...HEAD
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/chunked-v0.3.1...HEAD
+
+## [0.3.1][] - 2026-11-10
+
+[0.3.1]: https://github.com/trussed-dev/trussed-staging/releases/tag/chunked-v0.3.1
 
 - hard-code the buffer length 
 
