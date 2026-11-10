@@ -18,6 +18,8 @@ use trussed_fs_info::FsInfoExtension;
 use trussed_hkdf::HkdfExtension;
 #[cfg(feature = "hpke")]
 use trussed_hpke::HpkeExtension;
+#[cfg(feature = "ml-kem")]
+use trussed_kem::KemExtension;
 #[cfg(feature = "manage")]
 use trussed_manage::ManageExtension;
 #[cfg(feature = "wrap-key-to-file")]
@@ -49,6 +51,8 @@ pub enum ExtensionIds {
     FsInfo,
     #[cfg(feature = "hpke")]
     Hpke,
+    #[cfg(feature = "ml-kem")]
+    Kem,
 }
 
 #[cfg(feature = "chunked")]
@@ -87,6 +91,12 @@ impl ExtensionId<HpkeExtension> for Dispatcher {
     const ID: ExtensionIds = ExtensionIds::Hpke;
 }
 
+#[cfg(feature = "ml-kem")]
+impl ExtensionId<KemExtension> for Dispatcher {
+    type Id = ExtensionIds;
+    const ID: ExtensionIds = ExtensionIds::Kem;
+}
+
 impl From<ExtensionIds> for u8 {
     fn from(value: ExtensionIds) -> Self {
         match value {
@@ -102,6 +112,8 @@ impl From<ExtensionIds> for u8 {
             ExtensionIds::FsInfo => 4,
             #[cfg(feature = "hpke")]
             ExtensionIds::Hpke => 5,
+            #[cfg(feature = "ml-kem")]
+            ExtensionIds::Kem => 6,
         }
     }
 }
@@ -122,6 +134,8 @@ impl TryFrom<u8> for ExtensionIds {
             4 => Ok(Self::FsInfo),
             #[cfg(feature = "hpke")]
             5 => Ok(Self::Hpke),
+            #[cfg(feature = "ml-kem")]
+            6 => Ok(Self::Kem),
             _ => Err(Error::FunctionNotSupported),
         }
     }
@@ -206,6 +220,14 @@ impl ExtensionDispatch for Dispatcher {
             ),
             #[cfg(feature = "hpke")]
             ExtensionIds::Hpke => ExtensionImpl::<HpkeExtension>::extension_request_serialized(
+                &mut self.backend,
+                &mut ctx.core,
+                &mut ctx.backends,
+                request,
+                resources,
+            ),
+            #[cfg(feature = "ml-kem")]
+            ExtensionIds::Kem => ExtensionImpl::<KemExtension>::extension_request_serialized(
                 &mut self.backend,
                 &mut ctx.core,
                 &mut ctx.backends,

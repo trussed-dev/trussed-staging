@@ -4,30 +4,51 @@
 #![cfg(all(feature = "virt", feature = "chunked"))]
 
 use littlefs2_core::{path, PathBuf};
-use trussed::virt::StoreConfig;
+use trussed::{config::MAX_MESSAGE_LENGTH, virt::StoreConfig};
 use trussed_chunked::{utils, ChunkedClient};
-use trussed_core::{syscall, try_syscall, types::Bytes, types::Location, FilesystemClient};
+use trussed_core::{
+    syscall, try_syscall,
+    types::{Location, Message},
+    FilesystemClient,
+};
 use trussed_staging::virt::with_client;
 
 fn test_write_all(location: Location) {
     with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let path = PathBuf::from(path!("foo"));
-        utils::write_all(&mut client, location, path.clone(), &[48; 1234], None, None).unwrap();
+        const DATA_LEN: usize = MAX_MESSAGE_LENGTH + 1234;
+        utils::write_all(
+            &mut client,
+            location,
+            path.clone(),
+            &[48; DATA_LEN],
+            None,
+            None,
+        )
+        .unwrap();
 
         let data = syscall!(client.start_chunked_read(location, path)).data;
-        assert_eq!(&data, &[48; 1024]);
+        assert_eq!(&data, &[48; MAX_MESSAGE_LENGTH]);
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1234 - 1024]);
+        assert_eq!(&data, &[48; DATA_LEN - MAX_MESSAGE_LENGTH]);
     });
 }
 
 fn test_write_all_small(location: Location) {
     with_client(StoreConfig::ram(), "test chunked", |mut client| {
         let path = PathBuf::from(path!("foo2"));
-        utils::write_all(&mut client, location, path.clone(), &[48; 1023], None, None).unwrap();
+        utils::write_all(
+            &mut client,
+            location,
+            path.clone(),
+            &[48; MAX_MESSAGE_LENGTH - 1],
+            None,
+            None,
+        )
+        .unwrap();
 
         let data = syscall!(client.start_chunked_read(location, path)).data;
-        assert_eq!(&data, &[48; 1023]);
+        assert_eq!(&data, &[48; MAX_MESSAGE_LENGTH - 1]);
     });
 }
 
@@ -58,7 +79,7 @@ fn filesystem() {
         .metadata
         .is_none(),);
 
-        let data = Bytes::from(b"test data");
+        let data = Message::from(b"test data");
         syscall!(client.write_file(
             Location::Internal,
             PathBuf::from(path!("test_file")),
@@ -81,9 +102,9 @@ fn filesystem() {
         assert!(empty_data.data.is_empty());
         assert_eq!(empty_data.len, data.len());
 
-        let large_data = Bytes::from(&[0; 1024]);
-        let large_data2 = Bytes::from(&[1; 1024]);
-        let more_data = Bytes::from(&[2; 42]);
+        let large_data = Message::from(&[0; MAX_MESSAGE_LENGTH]);
+        let large_data2 = Message::from(&[1; MAX_MESSAGE_LENGTH]);
+        let more_data = Message::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_chunked_write(
             Location::Internal,

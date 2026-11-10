@@ -9,6 +9,7 @@ members = [
   "extensions/hpke",
   "extensions/manage",
   "extensions/wrap-key-to-file",
+  "extensions/kem",
 ]
 
 [workspace.package]
@@ -51,12 +52,17 @@ aead = { version = "0.5.2", optional = true, default-features = false }
 
 trussed-chunked = { version = "0.3.0", optional = true }
 trussed-hkdf = { version = "0.4.0", optional = true }
+trussed-kem = { version = "0.1.0", optional = true }
 trussed-hpke = { version = "0.3.0", optional = true }
 trussed-manage = { version = "0.3.0", optional = true }
 trussed-wrap-key-to-file = { version = "0.3.0", optional = true }
 trussed-fs-info = { version = "0.3.0", optional = true } 
 heapless = { version = "0.9.1", optional = true }
 heapless-bytes = { version = "0.5.0", optional = true }
+ml-dsa = { version = "0.1.2", default-features = false, optional = true, features = ["rand_core"] }
+ml-kem = { version = "0.3.4", default-features = false, optional = true }
+typenum = { version = "1.20.1", default-features = false, optional = true }
+hybrid-array = { version = "0.4.15", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.0"
@@ -72,6 +78,23 @@ hpke = ["trussed-hpke", "dep:hkdf", "dep:sha2", "dep:hex-literal", "dep:aead", "
 manage = ["trussed-manage"]
 wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file", "trussed/chacha8-poly1305"]
 fs-info = ["trussed-fs-info"]
+ml-dsa = [
+  "dep:ml-dsa",
+  "trussed/crypto-client",
+  "trussed-core/mldsa44",
+  "trussed-core/mldsa65",
+  "trussed-core/mldsa87",
+]
+ml-kem = [
+  "dep:ml-kem",
+  "dep:typenum",
+  "dep:trussed-kem",
+  "dep:hybrid-array",
+  "trussed/crypto-client",
+  "trussed-core/mlkem512",
+  "trussed-core/mlkem768",
+  "trussed-core/mlkem1024",
+]
 
 virt = ["std", "trussed/virt"]
 std = []
@@ -91,7 +114,10 @@ all-features = true
 [patch.crates-io]
 trussed-chunked = { path = "extensions/chunked" }
 trussed-hkdf = { path = "extensions/hkdf" }
+trussed-kem = { path = "extensions/kem" }
 trussed-hpke = { path = "extensions/hpke" }
 trussed-manage = { path = "extensions/manage" }
 trussed-wrap-key-to-file = { path = "extensions/wrap-key-to-file" }
 trussed-fs-info= { path = "extensions/fs-info" }
+trussed-core = { git = "https://github.com/sosthene-nitrokey/trussed.git", branch = "pqc-opcard"}
+trussed = { git = "https://github.com/sosthene-nitrokey/trussed.git", branch = "pqc-opcard"}
