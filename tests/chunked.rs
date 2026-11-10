@@ -5,7 +5,7 @@
 
 use littlefs2_core::{path, PathBuf};
 use trussed::virt::StoreConfig;
-use trussed_chunked::{utils, ChunkedClient};
+use trussed_chunked::{utils, ChunkedClient, CHUNK_SIZE};
 use trussed_core::{syscall, try_syscall, types::Bytes, types::Location, FilesystemClient};
 use trussed_staging::virt::with_client;
 
@@ -15,9 +15,9 @@ fn test_write_all(location: Location) {
         utils::write_all(&mut client, location, path.clone(), &[48; 1234], None, None).unwrap();
 
         let data = syscall!(client.start_chunked_read(location, path)).data;
-        assert_eq!(&data, &[48; 1024]);
+        assert_eq!(&data, &[48; CHUNK_SIZE]);
         let data = syscall!(client.read_file_chunk()).data;
-        assert_eq!(&data, &[48; 1234 - 1024]);
+        assert_eq!(&data, &[48; 1234 - CHUNK_SIZE]);
     });
 }
 
@@ -81,8 +81,8 @@ fn filesystem() {
         assert!(empty_data.data.is_empty());
         assert_eq!(empty_data.len, data.len());
 
-        let large_data = Bytes::from(&[0; 1024]);
-        let large_data2 = Bytes::from(&[1; 1024]);
+        let large_data = Bytes::from(&[0; CHUNK_SIZE]);
+        let large_data2 = Bytes::from(&[1; CHUNK_SIZE]);
         let more_data = Bytes::from(&[2; 42]);
         // ======== CHUNKED WRITES ========
         syscall!(client.start_chunked_write(

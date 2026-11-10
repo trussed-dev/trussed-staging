@@ -8,10 +8,12 @@ use littlefs2_core::PathBuf;
 use littlefs2_core::SeekFrom;
 
 use trussed::store::{create_directories, DynFile, DynFilesystem, Store};
-use trussed_core::types::{Bytes, Location, Message};
+use trussed_core::types::{Bytes, Location};
 use trussed_core::Error;
 
 use serde::{Deserialize, Serialize};
+
+use trussed_chunked::Chunk;
 
 /// Enumeration of possible methods to seek within an file that was just opened
 /// Used in the [`read_chunk`](crate::store::read_chunk) and [`write_chunk`](crate::store::write_chunk) calls,
@@ -138,7 +140,11 @@ pub fn move_file(
         .map_err(|_err| {
             error!("Failed to flush chunks: {:?}", _err);
             Error::FilesystemWriteFailure
-        })
+        })?;
+    store.fs(from_location).remove(from_path).map_err(|_err| {
+        error!("Failed to clear written chunks");
+        Error::FilesystemWriteFailure
+    })
 }
 
 fn copy_file_data(from: &dyn DynFile, to: &dyn DynFile) -> Result<(), littlefs2_core::Error> {
@@ -253,7 +259,7 @@ pub fn partial_read_file(
     location: Location,
     offset: usize,
     length: usize,
-) -> Result<(Message, usize), Error> {
+) -> Result<(Chunk, usize), Error> {
     let path = actual_path(client_id, path)?;
     let offset = u32::try_from(offset).map_err(|_| Error::FilesystemReadFailure)?;
     let pos = OpenSeekFrom::Start(offset);

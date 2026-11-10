@@ -11,9 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/staging-v0.5.0...HEAD
+[Unreleased]: https://github.com/trussed-dev/trussed-staging/compare/staging-v0.5.1...HEAD
 
--
+## [0.5.1][] - 2026-11-10
+
+[0.5.1]: https://github.com/trussed-dev/trussed-staging/compare/staging-v0.5.0...staging-v0.5.1
+
+- `chunked`: hard-code the buffer length 
+- `chunked`: fix volatile storage leak in chunked writes
 
 ## [0.5.0][] - 2026-06-09
 
