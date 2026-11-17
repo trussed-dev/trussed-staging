@@ -113,7 +113,7 @@ struct Context {
 }
 
 trait Aead:
-    AeadMutInPlace
+    AeadInOut
     + KeyInit<KeySize = <ChaCha20Poly1305 as KeySizeUser>::KeySize>
     + AeadCore<
         NonceSize = <ChaCha20Poly1305 as AeadCore>::NonceSize,
@@ -226,18 +226,16 @@ fn setup_base_r<T: Aead>(enc: x25519::PublicKey, skr: x25519::SecretKey, info: &
 
 const TAG_LEN: usize = 16;
 
-use chacha20poly1305::{
-    aead::{AeadCore, AeadMutInPlace, KeyInit, KeySizeUser},
-    ChaCha20Poly1305, ChaCha8Poly1305,
-};
+use aead::{AeadCore, AeadInOut, KeyInit, KeySizeUser};
+use chacha20poly1305::{ChaCha20Poly1305, ChaCha8Poly1305};
 
 impl Context {
     fn seal_in_place_detached<T: Aead>(self, aad: &[u8], plaintext: &mut [u8]) -> [u8; TAG_LEN] {
         // We don't increment because the simplified API only allows 1 encryption
         let nonce = (&self.base_nonce).into();
-        let mut aead = T::new((&self.key).into());
+        let aead = T::new((&self.key).into());
         let tag = aead
-            .encrypt_in_place_detached(nonce, aad, plaintext)
+            .encrypt_inout_detached(nonce, aad, plaintext.into())
             .map_err(|_err| {
                 error!("Not used to encrypt data too large: {_err:?}");
             })
@@ -253,8 +251,8 @@ impl Context {
         tag: [u8; TAG_LEN],
     ) -> Result<(), aead::Error> {
         let nonce = (&self.base_nonce).into();
-        let mut aead = T::new((&self.key).into());
-        aead.decrypt_in_place_detached(nonce, aad, ciphertext, (&tag).into())
+        let aead = T::new((&self.key).into());
+        aead.decrypt_inout_detached(nonce, aad, ciphertext.into(), (&tag).into())
     }
 }
 

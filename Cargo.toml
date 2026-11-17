@@ -37,7 +37,10 @@ littlefs2-core.workspace = true
 serde.workspace = true
 serde-byte-array.workspace = true
 
-chacha20poly1305 = { version = "0.10", default-features = false, features = ["heapless", "reduced-round"], optional = true }
+chacha20poly1305 = { version = "0.11", default-features = false, features = ["reduced-round"], optional = true }
+aead-stream  = { version = "0.6.0", optional = true}
+hybrid-array = { version = "0.4", optional = true }
+aead = { version = "0.6", optional = true, default-features = false }
 delog = "0.1.6"
 hkdf = { version = "0.12", optional = true }
 rand_core = { version = "0.6.4", default-features = false }
@@ -47,7 +50,6 @@ trussed = { version = "0.2", default-features = false, features = ["serde-extens
 trussed-core = "0.2"
 digest = { version = "0.10.7", default-features = false }
 hex-literal = { version = "0.4.0", optional = true }
-aead = { version = "0.5.2", optional = true, default-features = false }
 
 trussed-chunked = { version = "0.3.0", optional = true }
 trussed-hkdf = { version = "0.4.0", optional = true }
@@ -66,11 +68,11 @@ trussed = { version = "0.2", default-features = false, features = ["aes256-cbc",
 [features]
 default = ["chunked"]
 
-chunked = ["trussed-chunked", "chacha20poly1305/stream", "dep:heapless", "dep:heapless-bytes"]
+chunked = ["trussed-chunked", "dep:heapless", "dep:heapless-bytes", "dep:aead-stream", "dep:hybrid-array", "dep:chacha20poly1305"]
 hkdf = ["trussed-hkdf", "dep:hkdf", "dep:sha2"]
 hpke = ["trussed-hpke", "dep:hkdf", "dep:sha2", "dep:hex-literal", "dep:aead", "dep:chacha20poly1305"]
 manage = ["trussed-manage"]
-wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file", "trussed/chacha8-poly1305"]
+wrap-key-to-file = ["dep:chacha20poly1305", "trussed-wrap-key-to-file", "trussed/chacha8-poly1305", "dep:hybrid-array"]
 fs-info = ["trussed-fs-info"]
 
 virt = ["std", "trussed/virt"]
