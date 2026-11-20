@@ -1,7 +1,7 @@
 // Copyright (C) Nitrokey GmbH
 // SPDX-License-Identifier: Apache-2.0 or MIT
 
-use chacha20poly1305::aead::generic_array::GenericArray;
+use hybrid_array::Array;
 use trussed::{
     config::MAX_SERIALIZED_KEY_LENGTH,
     key::{self, Kind, Secrecy},
@@ -33,7 +33,7 @@ fn wrap_key_to_file(
         return Err(Error::MechanismInvalid);
     }
 
-    use chacha20poly1305::aead::{AeadMutInPlace, KeyInit};
+    use chacha20poly1305::aead::{AeadInOut, KeyInit};
     use chacha20poly1305::ChaCha8Poly1305;
     use rand_core::RngCore as _;
 
@@ -48,13 +48,9 @@ fn wrap_key_to_file(
 
     let key = keystore.load_key(Secrecy::Secret, Some(KIND), &request.wrapping_key)?;
     let chachakey: [u8; KEY_LEN] = (&*key.material).try_into().unwrap();
-    let mut aead = ChaCha8Poly1305::new(&GenericArray::clone_from_slice(&chachakey));
+    let aead = ChaCha8Poly1305::new(&Array(chachakey));
     let tag = aead
-        .encrypt_in_place_detached(
-            <&GenericArray<_, _> as From<&[u8; NONCE_LEN]>>::from(nonce),
-            &request.associated_data,
-            material,
-        )
+        .encrypt_inout_detached(&Array(nonce), &request.associated_data, material.into())
         .unwrap();
     data.extend_from_slice(&tag).unwrap();
     filestore.write(&request.path, request.location, &data)?;
@@ -70,7 +66,7 @@ fn unwrap_key_from_file(
         return Err(Error::MechanismInvalid);
     }
 
-    use chacha20poly1305::aead::{AeadMutInPlace, KeyInit};
+    use chacha20poly1305::aead::{AeadInOut, KeyInit};
     use chacha20poly1305::ChaCha8Poly1305;
     let mut data: Bytes<WRAPPED_TO_FILE_LEN> =
         filestore.read(&request.path, request.file_location)?;
@@ -90,13 +86,13 @@ fn unwrap_key_from_file(
 
     let key = keystore.load_key(Secrecy::Secret, Some(KIND), &request.key)?;
     let chachakey: [u8; KEY_LEN] = (&*key.material).try_into().unwrap();
-    let mut aead = ChaCha8Poly1305::new(&GenericArray::clone_from_slice(&chachakey));
+    let aead = ChaCha8Poly1305::new(&Array(chachakey));
     if aead
-        .decrypt_in_place_detached(
-            <&GenericArray<_, _> as From<&[u8; NONCE_LEN]>>::from(nonce),
+        .decrypt_inout_detached(
+            &Array(nonce),
             &request.associated_data,
-            material,
-            <&GenericArray<_, _> as From<&[u8; TAG_LEN]>>::from(tag),
+            material.into(),
+            &Array(tag),
         )
         .is_err()
     {

@@ -4,11 +4,8 @@
 mod store;
 use store::OpenSeekFrom;
 
-use chacha20poly1305::{
-    aead,
-    aead::stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31},
-    ChaCha8Poly1305, KeyInit,
-};
+use aead_stream::{DecryptorLE31, EncryptorLE31, Nonce as StreamNonce, StreamLE31};
+use chacha20poly1305::{aead, ChaCha8Poly1305, KeyInit};
 use littlefs2_core::{Path, PathBuf};
 use rand_core::RngCore;
 use trussed::{
@@ -219,7 +216,9 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 });
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
                     (&nonce).into();
-                let aead = ChaCha8Poly1305::new((&*key.material).into());
+                let aead = ChaCha8Poly1305::new(
+                    (&*key.material).try_into().or(Err(Error::InternalError))?,
+                );
                 let encryptor = EncryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 store::start_chunked_write(
                     &store,
@@ -246,8 +245,10 @@ impl ExtensionImpl<ChunkedExtension> for super::StagingBackend {
                 let nonce: Bytes<CHACHA8_STREAM_NONCE_LEN> =
                     filestore.read(&request.path, request.location)?;
                 let nonce: &StreamNonce<ChaCha8Poly1305, StreamLE31<ChaCha8Poly1305>> =
-                    (&*nonce).into();
-                let aead = ChaCha8Poly1305::new((&*key.material).into());
+                    (&*nonce).try_into().or(Err(Error::InternalError))?;
+                let aead = ChaCha8Poly1305::new(
+                    (&*key.material).try_into().or(Err(Error::InternalError))?,
+                );
                 let decryptor = DecryptorLE31::<ChaCha8Poly1305>::from_aead(aead, nonce);
                 backend_ctx.chunked_io_state =
                     Some(ChunkedIoState::EncryptedRead(EncryptedChunkedReadState {
